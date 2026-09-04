@@ -87,8 +87,10 @@ def test_build_report_computes_accuracies(det_policies):
 # ---------------------------------------------------------------------------
 
 NEEDS_KEY = pytest.mark.skipif(
-    not os.getenv("ANTHROPIC_API_KEY"),
-    reason="live LLM scoring requires ANTHROPIC_API_KEY",
+    not any(
+        os.getenv(k) for k in ("ANTHROPIC_API_KEY", "GEMINI_API_KEY", "GOOGLE_API_KEY")
+    ),
+    reason="live LLM scoring requires ANTHROPIC_API_KEY or GEMINI_API_KEY",
 )
 
 
@@ -119,21 +121,27 @@ def test_llm_backend_recovers_terms_and_refuses_correctly(tmp_path):
     Collapsing the two would let a billing problem masquerade as a model
     problem, or worse, let a genuine quality regression hide behind a skip.
     """
-    import anthropic
-
     from tests.eval.run_llm_fidelity import compile_with_llm
+
+    # Provider-agnostic: match on what the failure means, not on which SDK
+    # raised it, so adding a third backend does not require touching this test.
+    ACCOUNT_LEVEL_SIGNALS = (
+        "credit balance",
+        "quota",
+        "rate limit",
+        "resource_exhausted",
+        "permission denied",
+        "api key not valid",
+        "unauthenticated",
+        "authentication",
+    )
 
     try:
         policies, elapsed = compile_with_llm(cache_dir=tmp_path / "llm", force=False)
-    except (
-        anthropic.AuthenticationError,
-        anthropic.PermissionDeniedError,
-        anthropic.RateLimitError,
-    ) as exc:
-        pytest.skip(f"Anthropic API not usable on this account: {exc}")
-    except anthropic.BadRequestError as exc:
-        if "credit balance" in str(exc).lower():
-            pytest.skip(f"Anthropic account has no credits: {exc}")
+    except Exception as exc:  # noqa: BLE001 - classified below, re-raised if unknown
+        message = str(exc).lower()
+        if any(signal in message for signal in ACCOUNT_LEVEL_SIGNALS):
+            pytest.skip(f"LLM API not usable on this account: {exc}")
         raise
 
     report = build_report(policies, model="live", elapsed_s=elapsed)

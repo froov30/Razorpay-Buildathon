@@ -15,8 +15,11 @@ altair==5.5.0
 razorpay==1.4.2
 requests==2.32.3
 
-# LLM contract compilation (optional at runtime — compile cache makes it optional)
+# LLM contract compilation (optional at runtime — compile cache makes it optional).
+# Either backend satisfies the compiler; both are imported lazily, so the full
+# pipeline, test suite and dashboard run with neither installed.
 anthropic==0.42.0
+google-genai==2.22.0
 
 # Config
 python-dotenv==1.0.1

@@ -479,44 +479,124 @@ class LLMBackend:
         raw = "".join(
             block.text for block in message.content if getattr(block, "type", "") == "text"
         ).strip()
-        raw = re.sub(r"^```(?:json)?|```$", "", raw, flags=re.M).strip()
-        data = json.loads(raw)
-        return self._to_policy(source, data)
+        return policy_from_extraction(source, parse_extraction_json(raw))
 
     @staticmethod
     def _to_policy(source: ContractSource, data: dict) -> Policy:
-        def parse_dt(value):
-            if not value:
-                return None
-            return datetime.fromisoformat(value).replace(tzinfo=timezone.utc)
+        """Retained for backwards compatibility; delegates to the shared mapper."""
+        return policy_from_extraction(source, data)
 
-        eff = data.get("effective", {})
-        return Policy(
-            contract_id=source.contract_id,
-            version=source.version,
-            seller_id=source.seller_id,
-            effective=EffectivePeriod(
-                starts_at=parse_dt(eff.get("starts_at")) or source.effective_from,
-                ends_at=parse_dt(eff.get("ends_at")) or source.effective_to,
-                ambiguous=bool(eff.get("ambiguous", False)),
-            ),
-            commission=CommissionClause(**data["commission"]),
-            hold=SettlementHoldClause(**data["hold"]),
-            promotion_funding=PromotionFundingClause(**data["promotion_funding"]),
-            refund=RefundClause(**data["refund"]),
-            tax=TaxClause(**data["tax"]),
-            delivery_fee=DeliveryFeeClause(**data["delivery_fee"]),
-            ambiguities=[
-                Ambiguity(
-                    field_path=a["field_path"],
-                    reason=a["reason"],
-                    candidates=tuple(a.get("candidates", ())),
-                    severity=AmbiguitySeverity(a.get("severity", "blocking")),
-                    source_quote=a.get("source_quote", ""),
-                )
-                for a in data.get("ambiguities", [])
-            ],
+
+# ---------------------------------------------------------------------------
+# Shared extraction -> Policy mapping
+# ---------------------------------------------------------------------------
+
+
+def parse_extraction_json(raw: str) -> dict:
+    """Parse a model's JSON reply, tolerating code fences.
+
+    Shared across backends because every model wraps JSON in ```json fences
+    at least some of the time, regardless of how firmly it was told not to.
+    """
+    cleaned = re.sub(r"^```(?:json)?|```$", "", raw.strip(), flags=re.M).strip()
+    return json.loads(cleaned)
+
+
+def policy_from_extraction(source: ContractSource, data: dict) -> Policy:
+    """Map a model's extracted JSON onto the typed Policy DSL.
+
+    Backend-agnostic on purpose. The prompt and the schema are the contract
+    between this project and *any* model; keeping one mapper means a second
+    backend cannot quietly disagree with the first about what a field means,
+    which would make the two backends' fidelity scores incomparable.
+    """
+
+    def parse_dt(value):
+        if not value:
+            return None
+        return datetime.fromisoformat(value).replace(tzinfo=timezone.utc)
+
+    eff = data.get("effective", {})
+    return Policy(
+        contract_id=source.contract_id,
+        version=source.version,
+        seller_id=source.seller_id,
+        effective=EffectivePeriod(
+            starts_at=parse_dt(eff.get("starts_at")) or source.effective_from,
+            ends_at=parse_dt(eff.get("ends_at")) or source.effective_to,
+            ambiguous=bool(eff.get("ambiguous", False)),
+        ),
+        commission=CommissionClause(**data["commission"]),
+        hold=SettlementHoldClause(**data["hold"]),
+        promotion_funding=PromotionFundingClause(**data["promotion_funding"]),
+        refund=RefundClause(**data["refund"]),
+        tax=TaxClause(**data["tax"]),
+        delivery_fee=DeliveryFeeClause(**data["delivery_fee"]),
+        ambiguities=[
+            Ambiguity(
+                field_path=a["field_path"],
+                reason=a["reason"],
+                candidates=tuple(a.get("candidates", ())),
+                severity=AmbiguitySeverity(a.get("severity", "blocking")),
+                source_quote=a.get("source_quote", ""),
+            )
+            for a in data.get("ambiguities", [])
+        ],
+    )
+
+
+class GeminiBackend:
+    """Google Gemini clause extraction.
+
+    Behaviourally interchangeable with :class:`LLMBackend`: same system prompt,
+    same JSON schema, same shared mapper. The only differences are the SDK call
+    and that Gemini is asked for ``application/json`` directly, which removes
+    most code-fence wrapping at the source.
+
+    Exists because the compiler is meant to be backend-agnostic. Scoring the
+    same corpus against different models is only meaningful if everything
+    except the model is held constant, which is why the prompt and the mapper
+    are shared rather than reimplemented here.
+    """
+
+    name = "gemini"
+
+    def __init__(self, model: str | None = None, api_key: str | None = None) -> None:
+        self.model = model or os.getenv("ENTITLEGRAPH_GEMINI_MODEL", "gemini-2.0-flash")
+        self._api_key = (
+            api_key
+            or os.getenv("GEMINI_API_KEY")
+            or os.getenv("GOOGLE_API_KEY")
+            or ""
         )
+        if not self._api_key:
+            raise RuntimeError("GeminiBackend requires GEMINI_API_KEY (or GOOGLE_API_KEY)")
+
+    def extract(self, source: ContractSource) -> Policy:
+        from google import genai  # lazy import keeps the package optional
+        from google.genai import types
+
+        client = genai.Client(api_key=self._api_key)
+        response = client.models.generate_content(
+            model=self.model,
+            contents=(
+                f"Contract {source.contract_id} version {source.version} "
+                f"for seller {source.seller_id}.\n\n{source.body}"
+            ),
+            config=types.GenerateContentConfig(
+                system_instruction=_LLM_SYSTEM_PROMPT,
+                temperature=0,
+                max_output_tokens=2048,
+                response_mime_type="application/json",
+            ),
+        )
+        text = (response.text or "").strip()
+        if not text:
+            raise ValueError(
+                f"Gemini returned an empty response for {source.contract_id} "
+                f"v{source.version}"
+            )
+        return policy_from_extraction(source, parse_extraction_json(text))
 
 
 # ---------------------------------------------------------------------------
@@ -535,11 +615,21 @@ def select_backend(preference: str | None = None) -> CompilerBackend:
         return DeterministicBackend()
     if pref == "llm":
         return LLMBackend()
-    if os.getenv("ANTHROPIC_API_KEY"):
-        try:
-            return LLMBackend()
-        except RuntimeError:  # pragma: no cover - defensive
-            pass
+    if pref == "gemini":
+        return GeminiBackend()
+
+    # Auto-selection order is arbitrary but must be stable: an unstable default
+    # would silently change which model produced a cached policy.
+    for env_var, factory in (
+        ("ANTHROPIC_API_KEY", LLMBackend),
+        ("GEMINI_API_KEY", GeminiBackend),
+        ("GOOGLE_API_KEY", GeminiBackend),
+    ):
+        if os.getenv(env_var):
+            try:
+                return factory()
+            except RuntimeError:  # pragma: no cover - defensive
+                continue
     return DeterministicBackend()
 
 
