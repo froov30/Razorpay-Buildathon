@@ -106,10 +106,36 @@ def test_llm_cache_dir_is_separate_from_committed_cache():
 
 @NEEDS_KEY
 def test_llm_backend_recovers_terms_and_refuses_correctly(tmp_path):
-    """Live scored run. Skipped without a key so the suite stays hermetic."""
+    """Live scored run. Skipped without a usable key so the suite stays hermetic.
+
+    Two failure modes are deliberately distinguished:
+
+    * The API is unreachable for account reasons — no credit, revoked key,
+      rate limit. That is not evidence about extraction quality, so the test
+      skips with the reason rather than reporting a fidelity failure.
+    * The API answered and the model scored badly. That IS evidence, and the
+      test fails loudly.
+
+    Collapsing the two would let a billing problem masquerade as a model
+    problem, or worse, let a genuine quality regression hide behind a skip.
+    """
+    import anthropic
+
     from tests.eval.run_llm_fidelity import compile_with_llm
 
-    policies, elapsed = compile_with_llm(cache_dir=tmp_path / "llm", force=False)
+    try:
+        policies, elapsed = compile_with_llm(cache_dir=tmp_path / "llm", force=False)
+    except (
+        anthropic.AuthenticationError,
+        anthropic.PermissionDeniedError,
+        anthropic.RateLimitError,
+    ) as exc:
+        pytest.skip(f"Anthropic API not usable on this account: {exc}")
+    except anthropic.BadRequestError as exc:
+        if "credit balance" in str(exc).lower():
+            pytest.skip(f"Anthropic account has no credits: {exc}")
+        raise
+
     report = build_report(policies, model="live", elapsed_s=elapsed)
 
     assert report.scored_contracts == 10
