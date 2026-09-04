@@ -322,7 +322,7 @@ def run(
         )
 
         if not resolution.is_resolved:
-            decision = unresolved_decision(order.order_id, resolution)
+            decision = unresolved_decision(order.order_id, resolution, order_transfers)
             verdict = None
             if seller_transfer is not None:
                 verdict = gate.submit(

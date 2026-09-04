@@ -45,7 +45,11 @@ def _as_utc(dt: datetime) -> datetime:
     return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
 
 
-def unresolved_decision(order_id: str, resolution: Resolution) -> EntitlementDecision:
+def unresolved_decision(
+    order_id: str,
+    resolution: Resolution,
+    transfers: list[Transfer] | None = None,
+) -> EntitlementDecision:
     """Build the decision for an order whose governing contract is unresolvable.
 
     This is the honest-refusal path. Nothing is computed, nothing is asserted,
@@ -69,12 +73,27 @@ def unresolved_decision(order_id: str, resolution: Resolution) -> EntitlementDec
         if amb.source_quote:
             evidence.append(f'Clause text: "{amb.source_quote}"')
 
+    # No entitlement can be computed, so there is no variance to report. What
+    # *is* known — and what the reviewer needs — is how much money already moved
+    # under terms the system cannot justify. Recording it keeps the exposure
+    # visible instead of showing a misleading zero.
+    actual: dict[PartyRole, int] = defaultdict(int)
+    for t in transfers or []:
+        actual[t.party_role] += t.amount_paise
+    if actual:
+        settled = sum(abs(v) for v in actual.values())
+        evidence.append(
+            f"{format_inr(settled)} has already been settled across "
+            f"{len(actual)} parties under terms that cannot be justified."
+        )
+
     return EntitlementDecision(
         order_id=order_id,
         contract_id=resolution.contract_id,
         contract_version=None,
         tier=ConfidenceTier.NEEDS_REVIEW,
         category=category,
+        actual_paise=dict(actual),
         explanation=resolution.conflict_reason,
         evidence=evidence,
     )
