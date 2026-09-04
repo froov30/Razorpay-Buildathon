@@ -223,12 +223,32 @@ def main() -> int:
         help="which model backend to score (default: whichever key is present)",
     )
     parser.add_argument("--cache-dir", type=Path, default=DEFAULT_LLM_CACHE_DIR)
+    parser.add_argument(
+        "--min-interval",
+        type=float,
+        default=None,
+        help=(
+            "seconds to wait between contracts. Defaults to "
+            f"{FREE_TIER_MIN_INTERVAL_S}s for Gemini, whose free tier caps at 5 "
+            "requests/minute, and 0 elsewhere where latency rather than rate "
+            "limiting is the constraint."
+        ),
+    )
     args = parser.parse_args()
 
     logging.disable(logging.WARNING)
 
+    if args.min_interval is not None:
+        interval = args.min_interval
+    else:
+        interval = FREE_TIER_MIN_INTERVAL_S if args.backend == "gemini" else 0.0
+
     policies, elapsed = compile_with_llm(
-        args.cache_dir, force=args.force, model=args.model, backend=args.backend
+        args.cache_dir,
+        force=args.force,
+        model=args.model,
+        backend=args.backend,
+        min_interval_s=interval,
     )
     model_name = next(
         (
