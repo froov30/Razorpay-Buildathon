@@ -545,6 +545,122 @@ def policy_from_extraction(source: ContractSource, data: dict) -> Policy:
     )
 
 
+class NvidiaNimBackend:
+    """NVIDIA NIM clause extraction, via the OpenAI-compatible endpoint.
+
+    Third backend, and the one that makes the model-agnostic claim concrete:
+    NIM hosts open-weight models (Llama, Qwen, DeepSeek, Nemotron), so the same
+    corpus, prompt and mapper can be scored across proprietary and open models
+    alike. That comparison is the point — refusal quality is the property this
+    project cares about most, and it is not guaranteed by any model.
+
+    Uses the OpenAI SDK because NIM speaks that protocol. Nothing here is
+    OpenAI-specific beyond the wire format, so pointing ``base_url`` elsewhere
+    reaches any other compatible provider.
+    """
+
+    name = "nvidia_nim"
+
+    DEFAULT_BASE_URL = "https://integrate.api.nvidia.com/v1"
+
+    def __init__(
+        self,
+        model: str | None = None,
+        api_key: str | None = None,
+        base_url: str | None = None,
+    ) -> None:
+        # Pinned exactly, for the same reason as the other backends: an alias
+        # would silently change which model produced a cached policy.
+        self.model = model or os.getenv(
+            "ENTITLEGRAPH_NIM_MODEL", "meta/llama-3.3-70b-instruct"
+        )
+        self.base_url = base_url or os.getenv(
+            "ENTITLEGRAPH_NIM_BASE_URL", self.DEFAULT_BASE_URL
+        )
+        self._api_key = (
+            api_key
+            or os.getenv("NVIDIA_NIM_API_KEY")
+            or os.getenv("NVIDIA_API_KEY")
+            or ""
+        )
+        if not self._api_key:
+            raise RuntimeError(
+                "NvidiaNimBackend requires NVIDIA_NIM_API_KEY (or NVIDIA_API_KEY)"
+            )
+
+    _RETRYABLE = ("429", "500", "502", "503", "504", "overloaded", "unavailable", "timeout")
+    _MAX_ATTEMPTS = 4
+
+    def extract(self, source: ContractSource) -> Policy:
+        import time as _time
+
+        for attempt in range(1, self._MAX_ATTEMPTS + 1):
+            try:
+                return self._extract_once(source)
+            except Exception as exc:  # noqa: BLE001 - classified below
+                retryable = any(s in str(exc).lower() for s in self._RETRYABLE)
+                if not retryable or attempt == self._MAX_ATTEMPTS:
+                    raise
+                backoff = min(2.0 * (2 ** (attempt - 1)), 30.0)
+                logger.warning(
+                    "NIM transient failure on %s v%s (attempt %d/%d): %s — retrying in %.0fs",
+                    source.contract_id, source.version, attempt,
+                    self._MAX_ATTEMPTS, str(exc)[:120], backoff,
+                )
+                _time.sleep(backoff)
+        raise RuntimeError("unreachable retry state")
+
+    def _extract_once(self, source: ContractSource) -> Policy:
+        from openai import OpenAI  # lazy import keeps the package optional
+
+        client = OpenAI(api_key=self._api_key, base_url=self.base_url)
+        prompt = (
+            f"Contract {source.contract_id} version {source.version} "
+            f"for seller {source.seller_id}.\n\n{source.body}"
+        )
+
+        # JSON response_format support varies across NIM-hosted models, so try
+        # it and fall back to plain text. parse_extraction_json already strips
+        # code fences, which is how models without JSON mode usually reply.
+        for response_format in ({"type": "json_object"}, None):
+            kwargs: dict[str, Any] = {
+                "model": self.model,
+                "messages": [
+                    {"role": "system", "content": _LLM_SYSTEM_PROMPT},
+                    {"role": "user", "content": prompt},
+                ],
+                "temperature": 0,
+                "max_tokens": 4096,
+            }
+            if response_format is not None:
+                kwargs["response_format"] = response_format
+            try:
+                completion = client.chat.completions.create(**kwargs)
+            except Exception as exc:  # noqa: BLE001
+                unsupported = response_format is not None and any(
+                    marker in str(exc).lower()
+                    for marker in ("response_format", "json_object", "not supported", "400")
+                )
+                if unsupported:
+                    logger.info(
+                        "%s does not accept response_format=json_object; "
+                        "retrying as plain text",
+                        self.model,
+                    )
+                    continue
+                raise
+
+            text = (completion.choices[0].message.content or "").strip()
+            if not text:
+                raise ValueError(
+                    f"NIM returned an empty response for {source.contract_id} "
+                    f"v{source.version}"
+                )
+            return policy_from_extraction(source, parse_extraction_json(text))
+
+        raise RuntimeError("unreachable: response_format fallback exhausted")
+
+
 class GeminiBackend:
     """Google Gemini clause extraction.
 
@@ -739,6 +855,8 @@ def select_backend(preference: str | None = None) -> CompilerBackend:
         return LLMBackend()
     if pref == "gemini":
         return GeminiBackend()
+    if pref in ("nim", "nvidia", "nvidia_nim"):
+        return NvidiaNimBackend()
 
     # Auto-selection order is arbitrary but must be stable: an unstable default
     # would silently change which model produced a cached policy.
@@ -746,6 +864,8 @@ def select_backend(preference: str | None = None) -> CompilerBackend:
         ("ANTHROPIC_API_KEY", LLMBackend),
         ("GEMINI_API_KEY", GeminiBackend),
         ("GOOGLE_API_KEY", GeminiBackend),
+        ("NVIDIA_NIM_API_KEY", NvidiaNimBackend),
+        ("NVIDIA_API_KEY", NvidiaNimBackend),
     ):
         if os.getenv(env_var):
             try:

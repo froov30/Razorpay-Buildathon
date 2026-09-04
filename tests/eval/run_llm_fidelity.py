@@ -29,16 +29,18 @@ from src.contract_compiler.compiler import (  # noqa: E402
     ContractCompiler,
     GeminiBackend,
     LLMBackend,
+    NvidiaNimBackend,
     PolicyValidationError,
 )
+
+from src.contract_compiler.dsl import Policy  # noqa: E402
+from tests.eval.llm_fidelity import FidelityReport, build_report  # noqa: E402
 
 # Contracts whose reply could not be validated into a policy, keyed by
 # (contract_id, version). Populated by compile_with_llm and surfaced in the
 # report: a contract the backend could not produce a usable policy for is a
 # fidelity result, not an omission to be quietly dropped.
 COMPILE_FAILURES: dict[tuple[str, int], str] = {}
-from src.contract_compiler.dsl import Policy  # noqa: E402
-from tests.eval.llm_fidelity import FidelityReport, build_report  # noqa: E402
 
 DEFAULT_LLM_CACHE_DIR = Path("data/synthetic/compiled_policies_llm")
 RESULTS_PATH = Path("data/synthetic/llm_fidelity_report.json")
@@ -47,7 +49,7 @@ FIELD_ACCURACY_BAR = 0.85
 REFUSAL_ACCURACY_BAR = 0.90
 
 
-BACKENDS = {"claude": LLMBackend, "gemini": GeminiBackend}
+BACKENDS = {"claude": LLMBackend, "gemini": GeminiBackend, "nim": NvidiaNimBackend}
 
 
 def resolve_backend(name: str | None = None):
@@ -69,6 +71,8 @@ def resolve_backend(name: str | None = None):
         ("ANTHROPIC_API_KEY", LLMBackend),
         ("GEMINI_API_KEY", GeminiBackend),
         ("GOOGLE_API_KEY", GeminiBackend),
+        ("NVIDIA_NIM_API_KEY", NvidiaNimBackend),
+        ("NVIDIA_API_KEY", NvidiaNimBackend),
     ):
         if os.getenv(env_var):
             try:
@@ -76,7 +80,8 @@ def resolve_backend(name: str | None = None):
             except RuntimeError:
                 continue
     raise RuntimeError(
-        "No LLM credential found. Set ANTHROPIC_API_KEY or GEMINI_API_KEY in .env."
+        "No LLM credential found. Set ANTHROPIC_API_KEY, GEMINI_API_KEY or "
+        "NVIDIA_NIM_API_KEY in .env."
     )
 
 
