@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+
 import pytest
 
 from data.generator.contracts import INTENDED_TERMS, build_contract_sources
@@ -78,3 +80,41 @@ def test_build_report_computes_accuracies(det_policies):
     assert report.field_accuracy == 1.0
     assert report.refusal_accuracy == 1.0
     assert "field_accuracy" in report.to_dict()
+
+
+# ---------------------------------------------------------------------------
+# Live LLM scoring
+# ---------------------------------------------------------------------------
+
+NEEDS_KEY = pytest.mark.skipif(
+    not os.getenv("ANTHROPIC_API_KEY"),
+    reason="live LLM scoring requires ANTHROPIC_API_KEY",
+)
+
+
+def test_llm_cache_dir_is_separate_from_committed_cache():
+    """The deterministic cache backs the reproducibility guarantee.
+
+    Overwriting it with LLM output would silently change every headline
+    metric in the README, so the runner must use its own directory.
+    """
+    from tests.eval.run_llm_fidelity import DEFAULT_LLM_CACHE_DIR
+
+    assert "compiled_policies_llm" in str(DEFAULT_LLM_CACHE_DIR)
+    assert str(DEFAULT_LLM_CACHE_DIR) != "data/synthetic/compiled_policies"
+
+
+@NEEDS_KEY
+def test_llm_backend_recovers_terms_and_refuses_correctly(tmp_path):
+    """Live scored run. Skipped without a key so the suite stays hermetic."""
+    from tests.eval.run_llm_fidelity import compile_with_llm
+
+    policies, elapsed = compile_with_llm(cache_dir=tmp_path / "llm", force=False)
+    report = build_report(policies, model="live", elapsed_s=elapsed)
+
+    assert report.scored_contracts == 10
+    assert report.total_fields == 100
+    # Thresholds are deliberately below the observed score: this asserts the
+    # backend is usable, not that a specific model version is pinned.
+    assert report.field_accuracy >= 0.85, report.to_dict()["field_failures"]
+    assert report.refusal_accuracy >= 0.90, report.to_dict()["refusals"]
