@@ -32,6 +32,18 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any
 
+from dotenv import load_dotenv
+
+# This module reads RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET / MODE directly from
+# os.getenv, so .env has to be loaded before that happens regardless of which
+# module a caller imports first. src.pipeline also calls this (defensively;
+# load_dotenv() is idempotent and never overrides a real environment variable
+# already set), but this module must not depend on being imported through
+# pipeline to pick up a local .env file — a bare `RazorpayRouteClient()`
+# constructed directly, without src.pipeline in the import chain, would
+# otherwise silently resolve to MOCK even with a correctly filled-in .env.
+load_dotenv()
+
 from src.common.types import PartyRole, RazorpayMode
 
 logger = logging.getLogger(__name__)

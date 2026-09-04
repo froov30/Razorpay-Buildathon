@@ -26,6 +26,16 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from dotenv import load_dotenv
+
+# Every entry point (dashboard, API, eval harness) imports this module, so
+# loading .env here — once, at import time — is what actually makes a local
+# .env file take effect. Without this, RazorpayRouteClient.resolve_mode() would
+# never see RAZORPAY_KEY_ID/RAZORPAY_KEY_SECRET/ENTITLEGRAPH_RAZORPAY_MODE even
+# with a correctly filled-in .env sitting in the repo root. Does not override
+# variables already set in the real environment (e.g. by a test's monkeypatch).
+load_dotenv()
+
 from src.audit.log import AuditLog
 from src.common.types import (
     ConfidenceTier,
