@@ -104,14 +104,32 @@ class SettlementHoldClause:
 
 @dataclass(frozen=True, slots=True)
 class PromotionFundingClause:
-    """Who absorbs a discount. Split in bps; must sum to 10_000."""
+    """Who absorbs a discount. Split in bps; must sum to 10_000.
 
-    platform_share_bps: int = 10_000
-    seller_share_bps: int = 0
+    Either share may be ``None``. That is not a defect — it is the extractor
+    correctly declining to assign a number when the contract does not support
+    one, exactly as the DSL asks every field to behave. A model that answered
+    "I cannot tell who funds this" and then had its answer crash the type it
+    was answering into would be punished for being honest.
+    """
+
+    platform_share_bps: int | None = 10_000
+    seller_share_bps: int | None = 0
     source_quote: str = ""
 
+    def is_known(self) -> bool:
+        return self.platform_share_bps is not None and self.seller_share_bps is not None
+
     def is_balanced(self) -> bool:
-        return self.platform_share_bps + self.seller_share_bps == 10_000
+        """True only when both shares are known and sum to exactly 100%.
+
+        An unknown split is not balanced. It is also not *unbalanced* in the
+        arithmetic sense, but treating it as balanced would let an unreadable
+        clause pass validation and reach the settlement engine.
+        """
+        if not self.is_known():
+            return False
+        return self.platform_share_bps + self.seller_share_bps == 10_000  # type: ignore[operator]
 
 
 @dataclass(frozen=True, slots=True)
@@ -228,9 +246,17 @@ class Policy:
         )
 
     def is_computable(self) -> bool:
-        """True when this version's *terms* yield a defensible entitlement."""
+        """True when this version's *terms* yield a defensible entitlement.
+
+        Every value the settlement engine will dereference must be present. An
+        unknown promotion split reaches ``apply_bps`` as ``None`` and fails
+        there, deep inside a money calculation, rather than here where the
+        reason can still be explained to a reviewer.
+        """
         return (
-            not self.term_blocking_ambiguities() and self.commission.rate_bps is not None
+            not self.term_blocking_ambiguities()
+            and self.commission.rate_bps is not None
+            and self.promotion_funding.is_known()
         )
 
     def seller_share_bps(self) -> int | None:

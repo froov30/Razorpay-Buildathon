@@ -106,6 +106,7 @@ def test_llm_cache_dir_is_separate_from_committed_cache():
     assert str(DEFAULT_LLM_CACHE_DIR) != "data/synthetic/compiled_policies"
 
 
+@pytest.mark.live_llm
 @NEEDS_KEY
 def test_llm_backend_recovers_terms_and_refuses_correctly(tmp_path):
     """Live scored run. Skipped without a usable key so the suite stays hermetic.

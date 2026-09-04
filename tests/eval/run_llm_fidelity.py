@@ -29,7 +29,14 @@ from src.contract_compiler.compiler import (  # noqa: E402
     ContractCompiler,
     GeminiBackend,
     LLMBackend,
+    PolicyValidationError,
 )
+
+# Contracts whose reply could not be validated into a policy, keyed by
+# (contract_id, version). Populated by compile_with_llm and surfaced in the
+# report: a contract the backend could not produce a usable policy for is a
+# fidelity result, not an omission to be quietly dropped.
+COMPILE_FAILURES: dict[tuple[str, int], str] = {}
 from src.contract_compiler.dsl import Policy  # noqa: E402
 from tests.eval.llm_fidelity import FidelityReport, build_report  # noqa: E402
 
@@ -73,24 +80,72 @@ def resolve_backend(name: str | None = None):
     )
 
 
+# Google's free tier allows 5 requests per minute per model. Pacing to just
+# under that is cheaper than discovering the limit by hitting it: every 429
+# costs a wasted request and a ~37s forced wait, and a scored run that trips the
+# limit repeatedly measures Google's rate limiter rather than the model.
+FREE_TIER_MIN_INTERVAL_S = 13.0
+
+
 def compile_with_llm(
     cache_dir: Path | str = DEFAULT_LLM_CACHE_DIR,
     *,
     force: bool = False,
     model: str | None = None,
     backend: str | None = None,
+    min_interval_s: float = FREE_TIER_MIN_INTERVAL_S,
 ) -> tuple[dict[tuple[str, int], Policy], float]:
-    """Compile the whole corpus through an LLM backend. Returns policies + seconds."""
+    """Compile the whole corpus through an LLM backend. Returns policies + seconds.
+
+    Paced, not parallel. Throughput is irrelevant here — this measures accuracy
+    on eleven documents, and a run that finishes in twenty seconds but trips a
+    rate limit is worth less than one that takes three minutes and completes.
+    """
     chosen = resolve_backend(backend)
     if model:
         chosen = type(chosen)(model=model)
     compiler = ContractCompiler(backend=chosen, cache_dir=cache_dir)
     started = time.perf_counter()
     policies: dict[tuple[str, int], Policy] = {}
-    for source in build_contract_sources():
-        policies[(source.contract_id, source.version)] = compiler.compile(
-            source, force=force
-        )
+
+    sources = build_contract_sources()
+    for index, source in enumerate(sources):
+        key = (source.contract_id, source.version)
+        cached = compiler.cache_path(source).exists() and not force
+        if index > 0 and not cached and min_interval_s > 0:
+            time.sleep(min_interval_s)
+
+        # One contract failing must not abandon the batch. Model output varies
+        # between calls even at temperature 0, so a single malformed or
+        # unvalidatable reply is itself a data point about reliability — losing
+        # the other ten results to it would measure nothing at all.
+        for attempt in range(1, 3):
+            try:
+                policies[key] = compiler.compile(source, force=force or attempt > 1)
+                print(
+                    f"  [{index + 1}/{len(sources)}] {source.contract_id} "
+                    f"v{source.version}{' (cached)' if cached else ''}",
+                    flush=True,
+                )
+                break
+            except PolicyValidationError as exc:
+                if attempt == 1:
+                    print(
+                        f"  [{index + 1}/{len(sources)}] {source.contract_id} "
+                        f"v{source.version} produced an invalid policy, retrying once: "
+                        f"{str(exc)[:120]}",
+                        flush=True,
+                    )
+                    if min_interval_s > 0:
+                        time.sleep(min_interval_s)
+                    continue
+                COMPILE_FAILURES[key] = str(exc)
+                print(
+                    f"  [{index + 1}/{len(sources)}] {source.contract_id} "
+                    f"v{source.version} FAILED VALIDATION twice: {str(exc)[:120]}",
+                    flush=True,
+                )
+
     return policies, time.perf_counter() - started
 
 
@@ -128,6 +183,12 @@ def print_report(report: FidelityReport) -> None:
         mark = "PASS" if r.passed else "FAIL"
         print(f"  [{mark}] {r.contract_id} v{r.version} ({r.expectation})")
         print(f"         {r.detail[:110]}")
+
+    if COMPILE_FAILURES:
+        print()
+        print(rule("UNUSABLE REPLIES"))
+        for (cid, ver), detail in sorted(COMPILE_FAILURES.items()):
+            print(f"  {cid} v{ver}: {detail[:150]}")
 
     print()
     print(rule("VERDICT", char="="))

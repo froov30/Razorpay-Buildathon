@@ -562,7 +562,11 @@ class GeminiBackend:
     name = "gemini"
 
     def __init__(self, model: str | None = None, api_key: str | None = None) -> None:
-        self.model = model or os.getenv("ENTITLEGRAPH_GEMINI_MODEL", "gemini-2.0-flash")
+        # Pinned to an exact version, never an alias like `gemini-flash-latest`.
+        # An alias silently changes which model produced a cached policy, which
+        # would break the reproducibility guarantee the compile cache exists to
+        # provide. Update this deliberately, and re-score when you do.
+        self.model = model or os.getenv("ENTITLEGRAPH_GEMINI_MODEL", "gemini-3.5-flash")
         self._api_key = (
             api_key
             or os.getenv("GEMINI_API_KEY")
@@ -572,29 +576,147 @@ class GeminiBackend:
         if not self._api_key:
             raise RuntimeError("GeminiBackend requires GEMINI_API_KEY (or GOOGLE_API_KEY)")
 
+    # Transient server-side conditions worth retrying. Free-tier capacity is
+    # shared, so 503s during a scored run are routine and say nothing about
+    # extraction quality — failing the whole run on one would make the metric a
+    # measure of Google's load rather than of the model.
+    _RETRYABLE_STATUS = ("503", "500", "502", "504", "429", "unavailable", "overloaded")
+
+    # A 429 means two very different things and they must not be conflated.
+    # A per-MINUTE burst limit clears in seconds and is worth waiting out; a
+    # per-DAY project quota does not clear for hours, so retrying it only burns
+    # wall-clock time. Discriminate on the quotaId, which names the window
+    # explicitly — matching on "quotaValue" instead would catch both, because
+    # every quota error carries one.
+    _DAILY_MARKERS = ("perday", "requestsperday", "perdayperproject")
+    _MAX_ATTEMPTS = 6
+    _MAX_BACKOFF_S = 75.0
+
+    def _is_retryable(self, exc: Exception) -> bool:
+        text = str(exc).lower()
+        if not any(signal in text for signal in self._RETRYABLE_STATUS):
+            return False
+        compact = text.replace("_", "").replace("-", "").replace(" ", "")
+        return not any(marker in compact for marker in self._DAILY_MARKERS)
+
+    @staticmethod
+    def _server_retry_delay(exc: Exception) -> float | None:
+        """Honour the server's own retry hint when it supplies one.
+
+        Google returns `retryDelay: '37s'` alongside per-minute 429s. Guessing
+        with a generic exponential backoff either waits too long or, worse, too
+        little and burns another request against the same limit.
+        """
+        match = re.search(r"'retryDelay':\s*'(\d+(?:\.\d+)?)s'", str(exc))
+        if match:
+            return float(match.group(1))
+        match = re.search(r"retry in (\d+(?:\.\d+)?)s", str(exc), re.I)
+        return float(match.group(1)) if match else None
+
     def extract(self, source: ContractSource) -> Policy:
+        import time as _time
+
+        last_error: Exception | None = None
+        for attempt in range(1, self._MAX_ATTEMPTS + 1):
+            try:
+                return self._extract_once(source)
+            except Exception as exc:  # noqa: BLE001 - classified by _is_retryable
+                if not self._is_retryable(exc) or attempt == self._MAX_ATTEMPTS:
+                    raise
+                last_error = exc
+                hinted = self._server_retry_delay(exc)
+                backoff = (
+                    hinted + 2.0
+                    if hinted is not None
+                    else min(2.0 * (2 ** (attempt - 1)), self._MAX_BACKOFF_S)
+                )
+                logger.warning(
+                    "Gemini transient failure on %s v%s (attempt %d/%d): %s — "
+                    "retrying in %.0fs",
+                    source.contract_id,
+                    source.version,
+                    attempt,
+                    self._MAX_ATTEMPTS,
+                    str(exc)[:120],
+                    backoff,
+                )
+                _time.sleep(backoff)
+        raise RuntimeError(f"unreachable retry state: {last_error}")
+
+    def _extract_once(self, source: ContractSource) -> Policy:
         from google import genai  # lazy import keeps the package optional
         from google.genai import types
 
         client = genai.Client(api_key=self._api_key)
+        prompt = (
+            f"Contract {source.contract_id} version {source.version} "
+            f"for seller {source.seller_id}.\n\n{source.body}"
+        )
+
+        # Clause extraction is a reading task with a fixed output schema, not a
+        # reasoning task, so extended thinking buys nothing here and costs a
+        # great deal: on a mandatory-thinking model the reasoning consumed ~1,800
+        # tokens for a clean contract and ~6,900 for the deliberately unreadable
+        # one, crowding out the JSON itself. Disable it where the model allows.
+        # Some models reject thinking_budget=0 outright, so fall back rather
+        # than making the backend depend on one model's capabilities.
+        for thinking in (types.ThinkingConfig(thinking_budget=0), None):
+            try:
+                return self._call(client, types, source, prompt, thinking)
+            except Exception as exc:  # noqa: BLE001 - only swallow the one case
+                rejected_thinking = (
+                    thinking is not None
+                    and "invalid_argument" in str(exc).lower()
+                )
+                if not rejected_thinking:
+                    raise
+                logger.info(
+                    "%s rejects thinking_budget=0; retrying with default thinking",
+                    self.model,
+                )
+        raise RuntimeError("unreachable: thinking fallback exhausted")
+
+    def _call(self, client, types, source: ContractSource, prompt: str, thinking) -> Policy:
         response = client.models.generate_content(
             model=self.model,
-            contents=(
-                f"Contract {source.contract_id} version {source.version} "
-                f"for seller {source.seller_id}.\n\n{source.body}"
-            ),
+            contents=prompt,
             config=types.GenerateContentConfig(
                 system_instruction=_LLM_SYSTEM_PROMPT,
                 temperature=0,
-                max_output_tokens=2048,
+                thinking_config=thinking,
+                # Sized for the fallback path, where thinking could not be
+                # disabled and its tokens are charged against this same budget.
+                # With thinking off a policy costs ~500 tokens; with mandatory
+                # thinking it cost ~2,300 for a clean contract and ~7,600 for
+                # CTR-0007, whose promotion clauses over-allocate the same
+                # discount. That the deliberately unreadable contract is by far
+                # the most expensive to process is a small independent sign
+                # that its ambiguity is real rather than an artifact of the
+                # prose. At 2048 the reasoning crowded out the JSON entirely
+                # and the reply arrived truncated mid-string.
+                max_output_tokens=16384,
                 response_mime_type="application/json",
             ),
         )
+
+        candidate = response.candidates[0] if response.candidates else None
+        finish = getattr(candidate, "finish_reason", None)
+        if finish is not None and str(finish).endswith("MAX_TOKENS"):
+            usage = response.usage_metadata
+            raise ValueError(
+                f"Gemini hit the output token limit on {source.contract_id} "
+                f"v{source.version} (thinking={getattr(usage, 'thoughts_token_count', '?')}, "
+                f"output={getattr(usage, 'candidates_token_count', '?')}). The reply is "
+                f"truncated JSON. Raise max_output_tokens rather than trying to repair it — "
+                f"a salvaged half-policy would settle money against terms the model never "
+                f"finished reading."
+            )
+
         text = (response.text or "").strip()
         if not text:
             raise ValueError(
                 f"Gemini returned an empty response for {source.contract_id} "
-                f"v{source.version}"
+                f"v{source.version} (finish_reason={finish})"
             )
         return policy_from_extraction(source, parse_extraction_json(text))
 

@@ -26,6 +26,38 @@ from src.settlement_engine.compute import OrderContext
 from src.settlement_engine.gate import EntitlementGate
 
 
+def pytest_addoption(parser):
+    parser.addoption(
+        "--run-live-llm",
+        action="store_true",
+        default=False,
+        help="run the live LLM fidelity test (makes real, rate-limited API calls)",
+    )
+
+
+def pytest_configure(config):
+    config.addinivalue_line(
+        "markers", "live_llm: makes real LLM API calls; opt in with --run-live-llm"
+    )
+
+
+def pytest_collection_modifyitems(config, items):
+    """Keep metered API calls out of the default test run.
+
+    The live fidelity test paces itself against a 5-requests-per-minute free
+    tier, so it takes minutes and consumes a daily quota. Running it on every
+    `pytest` invocation would make the suite slow, non-hermetic, and capable of
+    exhausting a shared resource — so it is opt-in via `--run-live-llm`, and
+    `python -m tests.eval.run_llm_fidelity` remains the normal way to score it.
+    """
+    if config.getoption("--run-live-llm"):
+        return
+    skip = pytest.mark.skip(reason="live LLM test: pass --run-live-llm to run it")
+    for item in items:
+        if "live_llm" in item.keywords:
+            item.add_marker(skip)
+
+
 def utc(s: str) -> datetime:
     return datetime.fromisoformat(s).replace(tzinfo=timezone.utc)
 
