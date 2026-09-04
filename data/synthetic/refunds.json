@@ -1,0 +1,23 @@
+[
+  {
+    "refund_id": "RFD-1004",
+    "order_id": "ORD-1004",
+    "issued_at": "2026-01-24T14:00:00+00:00",
+    "amount_paise": 89900,
+    "reason": "customer_return"
+  },
+  {
+    "refund_id": "RFD-1005",
+    "order_id": "ORD-1005",
+    "issued_at": "2026-01-28T15:00:00+00:00",
+    "amount_paise": 540000,
+    "reason": "customer_return"
+  },
+  {
+    "refund_id": "RFD-1022",
+    "order_id": "ORD-1022",
+    "issued_at": "2026-01-25T11:00:00+00:00",
+    "amount_paise": 145000,
+    "reason": "customer_return"
+  }
+]

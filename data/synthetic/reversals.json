@@ -1,0 +1,16 @@
+[
+  {
+    "reversal_id": "REV-1004",
+    "transfer_id": "TRF-1004-S",
+    "order_id": "ORD-1004",
+    "executed_at": "2026-01-24T12:00:00+00:00",
+    "amount_paise": 56283
+  },
+  {
+    "reversal_id": "REV-1004-P",
+    "transfer_id": "TRF-1004-P",
+    "order_id": "ORD-1004",
+    "executed_at": "2026-01-24T12:00:00+00:00",
+    "amount_paise": 19725
+  }
+]

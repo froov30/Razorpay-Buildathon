@@ -1,0 +1,58 @@
+[
+  {
+    "promotion_id": "PRM-1002",
+    "order_id": "ORD-1002",
+    "discount_paise": 20000,
+    "campaign": "SELLERWEEK26",
+    "declared_funder": "platform"
+  },
+  {
+    "promotion_id": "PRM-1007",
+    "order_id": "ORD-1007",
+    "discount_paise": 30000,
+    "campaign": "FESTIVE26",
+    "declared_funder": "platform"
+  },
+  {
+    "promotion_id": "PRM-1021",
+    "order_id": "ORD-1021",
+    "discount_paise": 20000,
+    "campaign": "FESTIVE26",
+    "declared_funder": "seller"
+  },
+  {
+    "promotion_id": "PRM-1029",
+    "order_id": "ORD-1029",
+    "discount_paise": 30000,
+    "campaign": "FESTIVE26",
+    "declared_funder": "platform"
+  },
+  {
+    "promotion_id": "PRM-1030",
+    "order_id": "ORD-1030",
+    "discount_paise": 16000,
+    "campaign": "SELLERWEEK26",
+    "declared_funder": "seller"
+  },
+  {
+    "promotion_id": "PRM-1032",
+    "order_id": "ORD-1032",
+    "discount_paise": 9000,
+    "campaign": "SELLERWEEK26",
+    "declared_funder": "seller"
+  },
+  {
+    "promotion_id": "PRM-1034",
+    "order_id": "ORD-1034",
+    "discount_paise": 14000,
+    "campaign": "SELLERWEEK26",
+    "declared_funder": "platform"
+  },
+  {
+    "promotion_id": "PRM-1035",
+    "order_id": "ORD-1035",
+    "discount_paise": 40000,
+    "campaign": "FESTIVE26",
+    "declared_funder": null
+  }
+]

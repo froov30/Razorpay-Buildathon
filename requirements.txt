@@ -1,0 +1,26 @@
+# EntitleGraph Close Agent — pinned to minor versions for reproducible judging runs.
+# Deliberately small: SQLite is stdlib, no server infra required.
+
+# API layer
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pydantic==2.10.4
+
+# Dashboard
+streamlit==1.41.1
+pandas==2.2.3
+altair==5.5.0
+
+# Razorpay test-mode client
+razorpay==1.4.2
+requests==2.32.3
+
+# LLM contract compilation (optional at runtime — compile cache makes it optional)
+anthropic==0.42.0
+
+# Config
+python-dotenv==1.0.1
+
+# Tests
+pytest==8.3.4
+pytest-cov==6.0.0

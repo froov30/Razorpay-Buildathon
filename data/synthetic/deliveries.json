@@ -1,0 +1,233 @@
+[
+  {
+    "delivery_id": "DEL-1001",
+    "order_id": "ORD-1001",
+    "occurred_at": "2026-01-06T09:00:00+00:00",
+    "confirmed": true,
+    "delivery_partner_id": "DLP-01"
+  },
+  {
+    "delivery_id": "DEL-1002",
+    "order_id": "ORD-1002",
+    "occurred_at": "2026-01-09T10:00:00+00:00",
+    "confirmed": true,
+    "delivery_partner_id": "DLP-01"
+  },
+  {
+    "delivery_id": "DEL-1003",
+    "order_id": "ORD-1003",
+    "occurred_at": "2026-01-13T11:00:00+00:00",
+    "confirmed": true,
+    "delivery_partner_id": "DLP-02"
+  },
+  {
+    "delivery_id": "DEL-1004",
+    "order_id": "ORD-1004",
+    "occurred_at": "2026-01-19T12:00:00+00:00",
+    "confirmed": true,
+    "delivery_partner_id": "DLP-01"
+  },
+  {
+    "delivery_id": "DEL-1005",
+    "order_id": "ORD-1005",
+    "occurred_at": "2026-01-23T13:00:00+00:00",
+    "confirmed": true,
+    "delivery_partner_id": "DLP-02"
+  },
+  {
+    "delivery_id": "DEL-1010",
+    "order_id": "ORD-1010",
+    "occurred_at": "2026-01-21T11:00:00+00:00",
+    "confirmed": true,
+    "delivery_partner_id": "DLP-03"
+  },
+  {
+    "delivery_id": "DEL-1011",
+    "order_id": "ORD-1011",
+    "occurred_at": "2026-02-04T12:00:00+00:00",
+    "confirmed": true,
+    "delivery_partner_id": "DLP-03"
+  },
+  {
+    "delivery_id": "DEL-1012",
+    "order_id": "ORD-1012",
+    "occurred_at": "2026-02-07T13:00:00+00:00",
+    "confirmed": true,
+    "delivery_partner_id": "DLP-03"
+  },
+  {
+    "delivery_id": "DEL-1013",
+    "order_id": "ORD-1013",
+    "occurred_at": "2026-02-10T14:00:00+00:00",
+    "confirmed": true,
+    "delivery_partner_id": "DLP-03"
+  },
+  {
+    "delivery_id": "DEL-1014",
+    "order_id": "ORD-1014",
+    "occurred_at": "2026-02-19T15:00:00+00:00",
+    "confirmed": true,
+    "delivery_partner_id": "DLP-03"
+  },
+  {
+    "delivery_id": "DEL-1015",
+    "order_id": "ORD-1015",
+    "occurred_at": "2026-02-26T09:00:00+00:00",
+    "confirmed": true,
+    "delivery_partner_id": "DLP-03"
+  },
+  {
+    "delivery_id": "DEL-1016",
+    "order_id": "ORD-1016",
+    "occurred_at": "2026-01-10T10:00:00+00:00",
+    "confirmed": true,
+    "delivery_partner_id": "DLP-04"
+  },
+  {
+    "delivery_id": "DEL-1017",
+    "order_id": "ORD-1017",
+    "occurred_at": "2026-01-17T17:00:00+00:00",
+    "confirmed": false,
+    "delivery_partner_id": "DLP-04"
+  },
+  {
+    "delivery_id": "DEL-1018",
+    "order_id": "ORD-1018",
+    "occurred_at": "2026-01-20T18:00:00+00:00",
+    "confirmed": false,
+    "delivery_partner_id": "DLP-04"
+  },
+  {
+    "delivery_id": "DEL-1019",
+    "order_id": "ORD-1019",
+    "occurred_at": "2026-01-29T13:00:00+00:00",
+    "confirmed": true,
+    "delivery_partner_id": "DLP-04"
+  },
+  {
+    "delivery_id": "DEL-1020",
+    "order_id": "ORD-1020",
+    "occurred_at": "2026-02-05T14:00:00+00:00",
+    "confirmed": true,
+    "delivery_partner_id": "DLP-04"
+  },
+  {
+    "delivery_id": "DEL-1021",
+    "order_id": "ORD-1021",
+    "occurred_at": "2026-01-12T15:00:00+00:00",
+    "confirmed": true,
+    "delivery_partner_id": null
+  },
+  {
+    "delivery_id": "DEL-1022",
+    "order_id": "ORD-1022",
+    "occurred_at": "2026-01-22T09:00:00+00:00",
+    "confirmed": true,
+    "delivery_partner_id": null
+  },
+  {
+    "delivery_id": "DEL-1023",
+    "order_id": "ORD-1023",
+    "occurred_at": "2026-02-09T10:00:00+00:00",
+    "confirmed": true,
+    "delivery_partner_id": null
+  },
+  {
+    "delivery_id": "DEL-1024",
+    "order_id": "ORD-1024",
+    "occurred_at": "2026-02-15T11:00:00+00:00",
+    "confirmed": true,
+    "delivery_partner_id": null
+  },
+  {
+    "delivery_id": "DEL-1025",
+    "order_id": "ORD-1025",
+    "occurred_at": "2026-01-08T12:00:00+00:00",
+    "confirmed": true,
+    "delivery_partner_id": "DLP-05"
+  },
+  {
+    "delivery_id": "DEL-1026",
+    "order_id": "ORD-1026",
+    "occurred_at": "2026-01-18T13:00:00+00:00",
+    "confirmed": true,
+    "delivery_partner_id": "DLP-05"
+  },
+  {
+    "delivery_id": "DEL-1027",
+    "order_id": "ORD-1027",
+    "occurred_at": "2026-02-02T14:00:00+00:00",
+    "confirmed": true,
+    "delivery_partner_id": "DLP-05"
+  },
+  {
+    "delivery_id": "DEL-1028",
+    "order_id": "ORD-1028",
+    "occurred_at": "2026-02-12T15:00:00+00:00",
+    "confirmed": true,
+    "delivery_partner_id": "DLP-05"
+  },
+  {
+    "delivery_id": "DEL-1029",
+    "order_id": "ORD-1029",
+    "occurred_at": "2026-01-14T09:00:00+00:00",
+    "confirmed": true,
+    "delivery_partner_id": "DLP-06"
+  },
+  {
+    "delivery_id": "DEL-1030",
+    "order_id": "ORD-1030",
+    "occurred_at": "2026-01-28T10:00:00+00:00",
+    "confirmed": true,
+    "delivery_partner_id": "DLP-06"
+  },
+  {
+    "delivery_id": "DEL-1031",
+    "order_id": "ORD-1031",
+    "occurred_at": "2026-02-16T11:00:00+00:00",
+    "confirmed": true,
+    "delivery_partner_id": "DLP-06"
+  },
+  {
+    "delivery_id": "DEL-1032",
+    "order_id": "ORD-1032",
+    "occurred_at": "2026-01-11T12:00:00+00:00",
+    "confirmed": true,
+    "delivery_partner_id": "DLP-07"
+  },
+  {
+    "delivery_id": "DEL-1033",
+    "order_id": "ORD-1033",
+    "occurred_at": "2026-01-25T13:00:00+00:00",
+    "confirmed": true,
+    "delivery_partner_id": "DLP-07"
+  },
+  {
+    "delivery_id": "DEL-1034",
+    "order_id": "ORD-1034",
+    "occurred_at": "2026-02-08T14:00:00+00:00",
+    "confirmed": true,
+    "delivery_partner_id": "DLP-07"
+  },
+  {
+    "delivery_id": "DEL-1035",
+    "order_id": "ORD-1035",
+    "occurred_at": "2026-01-16T15:00:00+00:00",
+    "confirmed": true,
+    "delivery_partner_id": "DLP-08"
+  },
+  {
+    "delivery_id": "DEL-1036",
+    "order_id": "ORD-1036",
+    "occurred_at": "2026-02-06T09:00:00+00:00",
+    "confirmed": true,
+    "delivery_partner_id": "DLP-08"
+  },
+  {
+    "delivery_id": "DEL-1037",
+    "order_id": "ORD-1037",
+    "occurred_at": "2026-02-21T10:00:00+00:00",
+    "confirmed": true,
+    "delivery_partner_id": "DLP-08"
+  }
+]

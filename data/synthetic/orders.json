@@ -1,0 +1,402 @@
+[
+  {
+    "order_id": "ORD-1001",
+    "seller_id": "SLR-0001",
+    "placed_at": "2026-01-05T09:00:00+00:00",
+    "gross_amount_paise": 249900,
+    "shipping_fee_paise": 4900,
+    "tax_collected_paise": 12250,
+    "delivery_partner_id": "DLP-01",
+    "promotion_id": null
+  },
+  {
+    "order_id": "ORD-1002",
+    "seller_id": "SLR-0001",
+    "placed_at": "2026-01-08T10:00:00+00:00",
+    "gross_amount_paise": 179950,
+    "shipping_fee_paise": 4900,
+    "tax_collected_paise": 8753,
+    "delivery_partner_id": "DLP-01",
+    "promotion_id": "PRM-1002"
+  },
+  {
+    "order_id": "ORD-1003",
+    "seller_id": "SLR-0001",
+    "placed_at": "2026-01-12T11:00:00+00:00",
+    "gross_amount_paise": 325000,
+    "shipping_fee_paise": 4900,
+    "tax_collected_paise": 16005,
+    "delivery_partner_id": "DLP-02",
+    "promotion_id": null
+  },
+  {
+    "order_id": "ORD-1004",
+    "seller_id": "SLR-0001",
+    "placed_at": "2026-01-18T12:00:00+00:00",
+    "gross_amount_paise": 89900,
+    "shipping_fee_paise": 4900,
+    "tax_collected_paise": 4250,
+    "delivery_partner_id": "DLP-01",
+    "promotion_id": null
+  },
+  {
+    "order_id": "ORD-1005",
+    "seller_id": "SLR-0001",
+    "placed_at": "2026-01-22T13:00:00+00:00",
+    "gross_amount_paise": 540000,
+    "shipping_fee_paise": 4900,
+    "tax_collected_paise": 26755,
+    "delivery_partner_id": "DLP-02",
+    "promotion_id": null
+  },
+  {
+    "order_id": "ORD-1006",
+    "seller_id": "SLR-0002",
+    "placed_at": "2026-01-06T14:00:00+00:00",
+    "gross_amount_paise": 125000,
+    "shipping_fee_paise": 0,
+    "tax_collected_paise": 6250,
+    "delivery_partner_id": null,
+    "promotion_id": null
+  },
+  {
+    "order_id": "ORD-1007",
+    "seller_id": "SLR-0002",
+    "placed_at": "2026-01-14T15:00:00+00:00",
+    "gross_amount_paise": 210000,
+    "shipping_fee_paise": 0,
+    "tax_collected_paise": 10500,
+    "delivery_partner_id": null,
+    "promotion_id": "PRM-1007"
+  },
+  {
+    "order_id": "ORD-1008",
+    "seller_id": "SLR-0002",
+    "placed_at": "2026-01-25T09:00:00+00:00",
+    "gross_amount_paise": 76000,
+    "shipping_fee_paise": 0,
+    "tax_collected_paise": 3800,
+    "delivery_partner_id": null,
+    "promotion_id": null
+  },
+  {
+    "order_id": "ORD-1009",
+    "seller_id": "SLR-0002",
+    "placed_at": "2026-02-02T10:00:00+00:00",
+    "gross_amount_paise": 330000,
+    "shipping_fee_paise": 0,
+    "tax_collected_paise": 16500,
+    "delivery_partner_id": null,
+    "promotion_id": null
+  },
+  {
+    "order_id": "ORD-1010",
+    "seller_id": "SLR-0003",
+    "placed_at": "2026-01-20T11:00:00+00:00",
+    "gross_amount_paise": 420000,
+    "shipping_fee_paise": 4900,
+    "tax_collected_paise": 20755,
+    "delivery_partner_id": "DLP-03",
+    "promotion_id": null
+  },
+  {
+    "order_id": "ORD-1011",
+    "seller_id": "SLR-0003",
+    "placed_at": "2026-02-03T12:00:00+00:00",
+    "gross_amount_paise": 380000,
+    "shipping_fee_paise": 4900,
+    "tax_collected_paise": 18755,
+    "delivery_partner_id": "DLP-03",
+    "promotion_id": null
+  },
+  {
+    "order_id": "ORD-1012",
+    "seller_id": "SLR-0003",
+    "placed_at": "2026-02-06T13:00:00+00:00",
+    "gross_amount_paise": 295000,
+    "shipping_fee_paise": 4900,
+    "tax_collected_paise": 14505,
+    "delivery_partner_id": "DLP-03",
+    "promotion_id": null
+  },
+  {
+    "order_id": "ORD-1013",
+    "seller_id": "SLR-0003",
+    "placed_at": "2026-02-09T14:00:00+00:00",
+    "gross_amount_paise": 610000,
+    "shipping_fee_paise": 4900,
+    "tax_collected_paise": 30255,
+    "delivery_partner_id": "DLP-03",
+    "promotion_id": null
+  },
+  {
+    "order_id": "ORD-1014",
+    "seller_id": "SLR-0003",
+    "placed_at": "2026-02-18T15:00:00+00:00",
+    "gross_amount_paise": 198000,
+    "shipping_fee_paise": 4900,
+    "tax_collected_paise": 9655,
+    "delivery_partner_id": "DLP-03",
+    "promotion_id": null
+  },
+  {
+    "order_id": "ORD-1015",
+    "seller_id": "SLR-0003",
+    "placed_at": "2026-02-25T09:00:00+00:00",
+    "gross_amount_paise": 525000,
+    "shipping_fee_paise": 4900,
+    "tax_collected_paise": 26005,
+    "delivery_partner_id": "DLP-03",
+    "promotion_id": null
+  },
+  {
+    "order_id": "ORD-1016",
+    "seller_id": "SLR-0004",
+    "placed_at": "2026-01-09T10:00:00+00:00",
+    "gross_amount_paise": 165000,
+    "shipping_fee_paise": 4900,
+    "tax_collected_paise": 8005,
+    "delivery_partner_id": "DLP-04",
+    "promotion_id": null
+  },
+  {
+    "order_id": "ORD-1017",
+    "seller_id": "SLR-0004",
+    "placed_at": "2026-01-16T11:00:00+00:00",
+    "gross_amount_paise": 245000,
+    "shipping_fee_paise": 4900,
+    "tax_collected_paise": 12005,
+    "delivery_partner_id": "DLP-04",
+    "promotion_id": null
+  },
+  {
+    "order_id": "ORD-1018",
+    "seller_id": "SLR-0004",
+    "placed_at": "2026-01-19T12:00:00+00:00",
+    "gross_amount_paise": 310000,
+    "shipping_fee_paise": 4900,
+    "tax_collected_paise": 15255,
+    "delivery_partner_id": "DLP-04",
+    "promotion_id": null
+  },
+  {
+    "order_id": "ORD-1019",
+    "seller_id": "SLR-0004",
+    "placed_at": "2026-01-28T13:00:00+00:00",
+    "gross_amount_paise": 98000,
+    "shipping_fee_paise": 4900,
+    "tax_collected_paise": 4655,
+    "delivery_partner_id": "DLP-04",
+    "promotion_id": null
+  },
+  {
+    "order_id": "ORD-1020",
+    "seller_id": "SLR-0004",
+    "placed_at": "2026-02-04T14:00:00+00:00",
+    "gross_amount_paise": 440000,
+    "shipping_fee_paise": 4900,
+    "tax_collected_paise": 21755,
+    "delivery_partner_id": "DLP-04",
+    "promotion_id": null
+  },
+  {
+    "order_id": "ORD-1021",
+    "seller_id": "SLR-0005",
+    "placed_at": "2026-01-11T15:00:00+00:00",
+    "gross_amount_paise": 220000,
+    "shipping_fee_paise": 0,
+    "tax_collected_paise": 11000,
+    "delivery_partner_id": null,
+    "promotion_id": "PRM-1021"
+  },
+  {
+    "order_id": "ORD-1022",
+    "seller_id": "SLR-0005",
+    "placed_at": "2026-01-21T09:00:00+00:00",
+    "gross_amount_paise": 145000,
+    "shipping_fee_paise": 0,
+    "tax_collected_paise": 7250,
+    "delivery_partner_id": null,
+    "promotion_id": null
+  },
+  {
+    "order_id": "ORD-1023",
+    "seller_id": "SLR-0005",
+    "placed_at": "2026-02-08T10:00:00+00:00",
+    "gross_amount_paise": 360000,
+    "shipping_fee_paise": 0,
+    "tax_collected_paise": 18000,
+    "delivery_partner_id": null,
+    "promotion_id": null
+  },
+  {
+    "order_id": "ORD-1024",
+    "seller_id": "SLR-0005",
+    "placed_at": "2026-02-14T11:00:00+00:00",
+    "gross_amount_paise": 110000,
+    "shipping_fee_paise": 0,
+    "tax_collected_paise": 5500,
+    "delivery_partner_id": null,
+    "promotion_id": null
+  },
+  {
+    "order_id": "ORD-1025",
+    "seller_id": "SLR-0006",
+    "placed_at": "2026-01-07T12:00:00+00:00",
+    "gross_amount_paise": 187500,
+    "shipping_fee_paise": 4900,
+    "tax_collected_paise": 9130,
+    "delivery_partner_id": "DLP-05",
+    "promotion_id": null
+  },
+  {
+    "order_id": "ORD-1026",
+    "seller_id": "SLR-0006",
+    "placed_at": "2026-01-17T13:00:00+00:00",
+    "gross_amount_paise": 264000,
+    "shipping_fee_paise": 4900,
+    "tax_collected_paise": 12955,
+    "delivery_partner_id": "DLP-05",
+    "promotion_id": null
+  },
+  {
+    "order_id": "ORD-1027",
+    "seller_id": "SLR-0006",
+    "placed_at": "2026-02-01T14:00:00+00:00",
+    "gross_amount_paise": 99000,
+    "shipping_fee_paise": 4900,
+    "tax_collected_paise": 4705,
+    "delivery_partner_id": "DLP-05",
+    "promotion_id": null
+  },
+  {
+    "order_id": "ORD-1028",
+    "seller_id": "SLR-0006",
+    "placed_at": "2026-02-11T15:00:00+00:00",
+    "gross_amount_paise": 475000,
+    "shipping_fee_paise": 4900,
+    "tax_collected_paise": 23505,
+    "delivery_partner_id": "DLP-05",
+    "promotion_id": null
+  },
+  {
+    "order_id": "ORD-1029",
+    "seller_id": "SLR-0007",
+    "placed_at": "2026-01-13T09:00:00+00:00",
+    "gross_amount_paise": 230000,
+    "shipping_fee_paise": 4900,
+    "tax_collected_paise": 11255,
+    "delivery_partner_id": "DLP-06",
+    "promotion_id": "PRM-1029"
+  },
+  {
+    "order_id": "ORD-1030",
+    "seller_id": "SLR-0007",
+    "placed_at": "2026-01-27T10:00:00+00:00",
+    "gross_amount_paise": 156000,
+    "shipping_fee_paise": 4900,
+    "tax_collected_paise": 7555,
+    "delivery_partner_id": "DLP-06",
+    "promotion_id": "PRM-1030"
+  },
+  {
+    "order_id": "ORD-1031",
+    "seller_id": "SLR-0007",
+    "placed_at": "2026-02-15T11:00:00+00:00",
+    "gross_amount_paise": 340000,
+    "shipping_fee_paise": 4900,
+    "tax_collected_paise": 16755,
+    "delivery_partner_id": "DLP-06",
+    "promotion_id": null
+  },
+  {
+    "order_id": "ORD-1032",
+    "seller_id": "SLR-0008",
+    "placed_at": "2026-01-10T12:00:00+00:00",
+    "gross_amount_paise": 129000,
+    "shipping_fee_paise": 4900,
+    "tax_collected_paise": 6205,
+    "delivery_partner_id": "DLP-07",
+    "promotion_id": "PRM-1032"
+  },
+  {
+    "order_id": "ORD-1033",
+    "seller_id": "SLR-0008",
+    "placed_at": "2026-01-24T13:00:00+00:00",
+    "gross_amount_paise": 278000,
+    "shipping_fee_paise": 4900,
+    "tax_collected_paise": 13655,
+    "delivery_partner_id": "DLP-07",
+    "promotion_id": null
+  },
+  {
+    "order_id": "ORD-1034",
+    "seller_id": "SLR-0008",
+    "placed_at": "2026-02-07T14:00:00+00:00",
+    "gross_amount_paise": 164000,
+    "shipping_fee_paise": 4900,
+    "tax_collected_paise": 7955,
+    "delivery_partner_id": "DLP-07",
+    "promotion_id": "PRM-1034"
+  },
+  {
+    "order_id": "ORD-1035",
+    "seller_id": "SLR-0009",
+    "placed_at": "2026-01-15T15:00:00+00:00",
+    "gross_amount_paise": 590000,
+    "shipping_fee_paise": 4900,
+    "tax_collected_paise": 29255,
+    "delivery_partner_id": "DLP-08",
+    "promotion_id": "PRM-1035"
+  },
+  {
+    "order_id": "ORD-1036",
+    "seller_id": "SLR-0009",
+    "placed_at": "2026-02-05T09:00:00+00:00",
+    "gross_amount_paise": 315000,
+    "shipping_fee_paise": 4900,
+    "tax_collected_paise": 15505,
+    "delivery_partner_id": "DLP-08",
+    "promotion_id": null
+  },
+  {
+    "order_id": "ORD-1037",
+    "seller_id": "SLR-0009",
+    "placed_at": "2026-02-20T10:00:00+00:00",
+    "gross_amount_paise": 247000,
+    "shipping_fee_paise": 4900,
+    "tax_collected_paise": 12105,
+    "delivery_partner_id": "DLP-08",
+    "promotion_id": null
+  },
+  {
+    "order_id": "ORD-1038",
+    "seller_id": "SLR-0010",
+    "placed_at": "2026-01-23T11:00:00+00:00",
+    "gross_amount_paise": 112000,
+    "shipping_fee_paise": 0,
+    "tax_collected_paise": 5600,
+    "delivery_partner_id": null,
+    "promotion_id": null
+  },
+  {
+    "order_id": "ORD-1039",
+    "seller_id": "SLR-0010",
+    "placed_at": "2026-02-10T12:00:00+00:00",
+    "gross_amount_paise": 389000,
+    "shipping_fee_paise": 0,
+    "tax_collected_paise": 19450,
+    "delivery_partner_id": null,
+    "promotion_id": null
+  },
+  {
+    "order_id": "ORD-1040",
+    "seller_id": "SLR-0010",
+    "placed_at": "2026-02-22T13:00:00+00:00",
+    "gross_amount_paise": 205000,
+    "shipping_fee_paise": 0,
+    "tax_collected_paise": 10250,
+    "delivery_partner_id": null,
+    "promotion_id": null
+  }
+]

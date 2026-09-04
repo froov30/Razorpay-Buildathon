@@ -1,0 +1,25 @@
+# Environment / secrets — never commit real keys
+.env
+.env.local
+*.pem
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Event store (regenerable via `python -m data.generator`)
+*.db
+*.sqlite3
+data/synthetic/entitlegraph.db
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
