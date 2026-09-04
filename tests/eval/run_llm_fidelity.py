@@ -16,6 +16,7 @@ import argparse
 import json
 import logging
 import os
+import re
 import time
 from pathlib import Path
 
@@ -43,7 +44,8 @@ from tests.eval.llm_fidelity import FidelityReport, build_report  # noqa: E402
 COMPILE_FAILURES: dict[tuple[str, int], str] = {}
 
 DEFAULT_LLM_CACHE_DIR = Path("data/synthetic/compiled_policies_llm")
-RESULTS_PATH = Path("data/synthetic/llm_fidelity_report.json")
+RESULTS_DIR = Path("data/synthetic")
+RESULTS_PATH = RESULTS_DIR / "llm_fidelity_report.json"
 
 FIELD_ACCURACY_BAR = 0.85
 REFUSAL_ACCURACY_BAR = 0.90
@@ -92,6 +94,18 @@ def resolve_backend(name: str | None = None):
 FREE_TIER_MIN_INTERVAL_S = 13.0
 
 
+def model_cache_dir(base: Path | str, model_id: str) -> Path:
+    """Give each model its own cache directory.
+
+    A shared directory silently clobbers the previous model's policies, so a
+    second scored run would report a mixture of two models' output while
+    claiming to measure one. Slugging the model id keeps runs comparable and
+    lets several models be scored without re-fetching each other's work.
+    """
+    slug = re.sub(r"[^a-zA-Z0-9]+", "-", model_id).strip("-").lower()
+    return Path(base).parent / f"{Path(base).name}_{slug}"
+
+
 def compile_with_llm(
     cache_dir: Path | str = DEFAULT_LLM_CACHE_DIR,
     *,
@@ -109,7 +123,8 @@ def compile_with_llm(
     chosen = resolve_backend(backend)
     if model:
         chosen = type(chosen)(model=model)
-    compiler = ContractCompiler(backend=chosen, cache_dir=cache_dir)
+    resolved_cache = model_cache_dir(cache_dir, getattr(chosen, "model", chosen.name))
+    compiler = ContractCompiler(backend=chosen, cache_dir=resolved_cache)
     started = time.perf_counter()
     policies: dict[tuple[str, int], Policy] = {}
 
@@ -260,16 +275,23 @@ def main() -> int:
     )
     report = build_report(policies, model=model_name, elapsed_s=elapsed)
 
-    RESULTS_PATH.parent.mkdir(parents=True, exist_ok=True)
-    RESULTS_PATH.write_text(
-        json.dumps(report.to_dict(), indent=2, ensure_ascii=False), encoding="utf-8"
-    )
+    # One report per model, plus a stable "latest" copy. Without the per-model
+    # file a second scored run overwrites the first, which is precisely what
+    # makes a cross-model comparison impossible to assemble afterwards.
+    slug = re.sub(r"[^a-zA-Z0-9]+", "-", model_name).strip("-").lower()
+    per_model_path = RESULTS_DIR / f"llm_fidelity_report_{slug}.json"
+    payload = json.dumps(report.to_dict(), indent=2, ensure_ascii=False)
+
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    per_model_path.write_text(payload, encoding="utf-8")
+    RESULTS_PATH.write_text(payload, encoding="utf-8")
 
     if args.json:
         print(json.dumps(report.to_dict(), indent=2))
     else:
         print_report(report)
-        print(f"Report written to {RESULTS_PATH}")
+        print(f"Report written to {per_model_path}")
+        print(f"Also copied to  {RESULTS_PATH}")
 
     return (
         0
