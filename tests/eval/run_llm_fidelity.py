@@ -106,6 +106,22 @@ def model_cache_dir(base: Path | str, model_id: str) -> Path:
     return Path(base).parent / f"{Path(base).name}_{slug}"
 
 
+def load_cached_policies(cache_dir: Path | str) -> dict[tuple[str, int], Policy]:
+    """Rebuild policies from a cache directory without contacting any API.
+
+    Scoring is cheap and the extraction is not, so a change to the scorer
+    should never require re-running the corpus. This also recovers a report
+    from a run whose process died, or one made by an older revision of this
+    script, since the compiled artifacts on disk are the real output.
+    """
+    policies: dict[tuple[str, int], Policy] = {}
+    for path in sorted(Path(cache_dir).glob("*.json")):
+        data = json.loads(path.read_text(encoding="utf-8"))
+        policy = Policy.from_dict(data)
+        policies[(policy.contract_id, policy.version)] = policy
+    return policies
+
+
 def compile_with_llm(
     cache_dir: Path | str = DEFAULT_LLM_CACHE_DIR,
     *,
@@ -167,6 +183,31 @@ def compile_with_llm(
                 )
 
     return policies, time.perf_counter() - started
+
+
+def _write_and_print(
+    report: FidelityReport, model_name: str, *, as_json: bool = False
+) -> None:
+    """Persist one report per model, plus a stable 'latest' copy.
+
+    Without the per-model file a second scored run overwrites the first, which
+    is exactly what makes a cross-model comparison impossible to assemble
+    afterwards.
+    """
+    slug = re.sub(r"[^a-zA-Z0-9]+", "-", model_name).strip("-").lower()
+    per_model_path = RESULTS_DIR / f"llm_fidelity_report_{slug}.json"
+    payload = json.dumps(report.to_dict(), indent=2, ensure_ascii=False)
+
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    per_model_path.write_text(payload, encoding="utf-8")
+    RESULTS_PATH.write_text(payload, encoding="utf-8")
+
+    if as_json:
+        print(payload)
+    else:
+        print_report(report)
+        print(f"Report written to {per_model_path}")
+        print(f"Also copied to  {RESULTS_PATH}")
 
 
 def print_report(report: FidelityReport) -> None:
@@ -239,6 +280,16 @@ def main() -> int:
     )
     parser.add_argument("--cache-dir", type=Path, default=DEFAULT_LLM_CACHE_DIR)
     parser.add_argument(
+        "--from-cache",
+        type=Path,
+        default=None,
+        help=(
+            "score policies already on disk in this directory instead of "
+            "calling any API. Use it to re-score after changing the scorer, or "
+            "to recover a report from a run that died partway."
+        ),
+    )
+    parser.add_argument(
         "--min-interval",
         type=float,
         default=None,
@@ -252,6 +303,23 @@ def main() -> int:
     args = parser.parse_args()
 
     logging.disable(logging.WARNING)
+
+    if args.from_cache:
+        policies = load_cached_policies(args.from_cache)
+        if not policies:
+            print(f"No cached policies found in {args.from_cache}")
+            return 1
+        model_name = next(
+            (
+                p.provenance.model
+                for p in policies.values()
+                if p.provenance and p.provenance.model
+            ),
+            Path(args.from_cache).name,
+        )
+        report = build_report(policies, model=model_name, elapsed_s=0.0)
+        _write_and_print(report, model_name, as_json=args.json)
+        return 0
 
     if args.min_interval is not None:
         interval = args.min_interval
@@ -274,24 +342,7 @@ def main() -> int:
         "unknown",
     )
     report = build_report(policies, model=model_name, elapsed_s=elapsed)
-
-    # One report per model, plus a stable "latest" copy. Without the per-model
-    # file a second scored run overwrites the first, which is precisely what
-    # makes a cross-model comparison impossible to assemble afterwards.
-    slug = re.sub(r"[^a-zA-Z0-9]+", "-", model_name).strip("-").lower()
-    per_model_path = RESULTS_DIR / f"llm_fidelity_report_{slug}.json"
-    payload = json.dumps(report.to_dict(), indent=2, ensure_ascii=False)
-
-    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
-    per_model_path.write_text(payload, encoding="utf-8")
-    RESULTS_PATH.write_text(payload, encoding="utf-8")
-
-    if args.json:
-        print(json.dumps(report.to_dict(), indent=2))
-    else:
-        print_report(report)
-        print(f"Report written to {per_model_path}")
-        print(f"Also copied to  {RESULTS_PATH}")
+    _write_and_print(report, model_name, as_json=args.json)
 
     return (
         0
