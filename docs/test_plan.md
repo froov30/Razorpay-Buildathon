@@ -170,6 +170,51 @@ classification accuracy ≥ 95%, and exception recall ≥ 95%.
 
 ---
 
+## 5a. LLM compiler fidelity
+
+Run via `python -m tests.eval.run_llm_fidelity --backend {claude|gemini|nim}`.
+Committed artifacts: `data/synthetic/llm_fidelity_report_*.json`.
+
+Two things are scored, and the split matters more than either number:
+
+**Term extraction** — of the 10 commercial terms per contract that a careful
+reader should recover, how many were recovered exactly.
+
+**Refusal correctness** — whether the model declined to answer where the
+contract does not support an answer, and *only* there. Scored in both
+directions, so over-refusing on a clear contract counts against it too.
+
+| Model | Term extraction | Refusal correctness |
+|---|---|---|
+| `moonshotai/kimi-k3` (NVIDIA NIM) | **100%** (100/100 fields, 10/10 contracts) | 10/11 contracts |
+| `gemini-3.1-flash-lite` | **100%** (100/100 fields, 10/10 contracts) | 9/11 contracts |
+
+**Both models read every readable term perfectly. Neither handled the
+deliberately unreadable contract correctly.**
+
+- `CTR-0007` (promotion clauses over-allocating the same discount): **both
+  models failed.** Kimi invented terms. flash-lite emitted an incoherent
+  60% + 60% split with no ambiguity recorded — a reply so malformed that no
+  valid policy could be built from it at all.
+- `CTR-0003 v2` (amendment with two defensible effective dates): Kimi flagged
+  **both** candidate readings correctly. flash-lite found only `2026-02-01` and
+  missed the competing `2026-02-12` reading entirely — a half-detection, which
+  is more dangerous than none because it looks resolved.
+
+The reported `refusal_accuracy` in flash-lite's JSON reads 90% because its
+`CTR-0007` reply produced no policy and so fell out of the denominator. Counting
+it — as the scorer now does — gives 9 of 11. That omission is recorded here
+rather than quietly left in the artifact.
+
+**What this justifies.** The deterministic validation layer rejected
+flash-lite's 120% split before it could reach the settlement engine. That is the
+entire argument for the architecture: the model is the extractor, not the
+authority, and a typed policy plus structural validation is what stands between
+a plausible-looking model output and a wrong payout. Extraction is close to
+solved; knowing when *not* to answer is not.
+
+---
+
 ## 6. Known limitations
 
 Stated because reporting a metric without its blind spot is the failure mode this
@@ -191,10 +236,16 @@ project exists to criticise.
    failure mode the LLM backend is prompted to use — but its coverage on
    arbitrary real agreements is untested and would be poor.
 
-3. **The LLM backend is not scored.** Because compilation is cached for
-   determinism, the committed metrics come from cached artifacts. LLM extraction
-   quality across a diverse contract corpus is not measured here. A production
-   version would need a held-out corpus with human-labelled terms.
+3. **LLM fidelity is measured on eleven synthetic contracts, not a diverse
+   corpus.** §5a reports real scored runs for two models, so the AI path is no
+   longer unmeasured. But eleven documents written by this project is a small,
+   friendly corpus: the prose is consistent, the clauses are well-formed, and
+   the two hard cases were planted deliberately. Both models scoring 100% on
+   term extraction says more about the corpus being clean than about the models
+   being reliable on real agreements. A production version needs a held-out set
+   of genuine merchant contracts with human-labelled terms, which this does not
+   have. The refusal results are the more transferable finding, because failing
+   to decline is a behaviour rather than a difficulty score.
 
 4. **Synthetic scale.** 40 orders, 11 contract versions. Throughput at 245
    records says nothing about behaviour at 245 million; the scaling argument in

@@ -188,6 +188,15 @@ python -m tests.eval --quiet
 > ground truth the engine has no code path to read. Amount-weighted, so a ₹50
 > miss and a ₹50,000 miss aren't treated the same.
 >
+> And I scored the AI part separately, across two model families. Both read a
+> hundred percent of the contract terms correctly. **Neither** could decline to
+> answer on the contract that has no answer — one invented a commission split,
+> the other emitted a sixty-plus-sixty percent allocation that doesn't even sum
+> to a hundred. My validator caught it before it reached the settlement engine.
+>
+> That's the point: extraction is close to solved, knowing when *not* to answer
+> isn't. The model is the extractor, never the authority.
+>
 > Exact entitlement match is 70.6% — deliberately not a hundred. Half this batch
 > has injected defects. A submission reporting a hundred percent here would be
 > reporting that its test data contains nothing to find.

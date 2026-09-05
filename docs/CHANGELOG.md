@@ -317,6 +317,78 @@ contradicts the agreement — and by correcting the mislabelled fixture.
 
 ---
 
+## Scoring the LLM compiler — what the models actually did
+
+The submission claimed to interpret contracts with AI while every reported
+metric came from the deterministic regex fallback. `docs/test_plan.md` said so
+in its own limitations section. That gap is now closed, and the result was more
+interesting than the number being chased.
+
+### Both models are perfect at the easy half
+
+`moonshotai/kimi-k3` and `gemini-3.1-flash-lite` each recovered **100% of terms**
+(100/100 fields, 10/10 contracts) — commission rate and base, hold conditions,
+promotion splits, refund precedence, withholding, delivery fees. Reading
+well-formed clauses is not the hard part.
+
+### Neither could decline to answer
+
+| Contract | `kimi-k3` | `gemini-3.1-flash-lite` |
+|---|---|---|
+| `CTR-0007` — promotion clauses over-allocate the same discount | Invented terms | Emitted 60% + 60%, no ambiguity flagged. Reply so malformed no policy could be built |
+| `CTR-0003 v2` — two defensible effective dates | Flagged **both** readings correctly | Found `2026-02-01` only, missed `2026-02-12` |
+
+flash-lite's half-detection on the date is the more dangerous failure. A missed
+ambiguity is at least visibly unresolved; a *partially* detected one looks
+settled and is not.
+
+### Why this vindicates the architecture rather than undermining it
+
+The deterministic validator rejected flash-lite's 120% split before it reached
+the settlement engine. Nothing settled against it. That is precisely what the
+typed Policy DSL and `validate_policy` exist for: **the model is the extractor,
+never the authority.**
+
+It also justifies scoring refusal separately from extraction. A single blended
+accuracy figure would have read ~95% for both models and hidden the fact that
+both failed the only case that mattered.
+
+### Things that broke while measuring this
+
+- **A model returning the correct answer crashed the code.** Gemini correctly
+  emitted `null` for both promotion shares on `CTR-0007`; `is_balanced()` was
+  typed `int` and raised `TypeError`. A model declining to guess was punished
+  with a stack trace. Shares are now `int | None`, and `is_computable()` requires
+  the split to be known so a `None` reaches a reviewer with an explanation
+  rather than reaching `apply_bps` inside a money calculation.
+- **The refusal score flattered the worst failure.** A reply that produced no
+  valid policy fell out of the denominator entirely, so flash-lite was scored
+  only on the ten contracts it found easy. Compile failures now count as failed
+  refusals; the corrected figure is 9 of 11, not 90%.
+- **A mandatory-thinking model truncated its own output.** At a 2048-token
+  budget, ~1,800 tokens went to reasoning and the JSON was cut mid-string.
+  Notably the reasoning cost scaled with difficulty: ~1,800 tokens for a clean
+  contract, ~6,900 for `CTR-0007`. The deliberately unreadable contract really
+  is the expensive one to process.
+- **Per-model caching was missing.** All backends shared one cache directory, so
+  scoring a second model silently overwrote the first — a cross-model comparison
+  would have reported a mixture while claiming to measure one model. Found when
+  the Kimi run destroyed the Gemini results.
+- **Rate-limit classification was wrong.** A per-minute 429 and a per-day quota
+  exhaustion were treated identically. They need opposite responses: wait, or
+  stop. Discriminated on `quotaId`, since every quota error carries a
+  `quotaValue` and matching on that catches both.
+
+### Stated limitation
+
+Eleven synthetic contracts written by this project is a friendly corpus. Both
+models scoring 100% on extraction says more about the prose being clean than
+about real-world reliability. The refusal findings transfer better than the
+extraction score, because failing to decline is a behaviour rather than a
+difficulty rating.
+
+---
+
 ## Build timeline
 
 | Stage | Outcome |

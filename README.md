@@ -64,6 +64,29 @@ construction with no override.
 is deliberately not near 100%: if it were, the test data would contain nothing to
 find.
 
+### The AI path, measured separately
+
+The headline metrics above come from the cached deterministic compile, so they
+reproduce with no API key. The LLM compiler is scored on its own, against two
+model families:
+
+| Model | Term extraction | Refusal correctness |
+|---|---|---|
+| `moonshotai/kimi-k3` (NVIDIA NIM) | 100% (100/100 fields) | 10/11 contracts |
+| `gemini-3.1-flash-lite` | 100% (100/100 fields) | 9/11 contracts |
+
+**Both models read every readable term perfectly. Neither handled the
+deliberately unreadable contract correctly** — one invented a commission split,
+the other emitted an incoherent 60% + 60% allocation with no ambiguity flagged.
+
+That gap is the whole argument. Extraction is close to solved; knowing when
+*not* to answer is not. The deterministic validation layer rejected the 120%
+split before it could reach the settlement engine — the model is the extractor,
+never the authority. Full breakdown in [`docs/test_plan.md`](docs/test_plan.md)
+§5a, raw artifacts in `data/synthetic/llm_fidelity_report_*.json`.
+
+Reproduce with `python -m tests.eval.run_llm_fidelity --backend {claude|gemini|nim}`.
+
 ---
 
 ## Architecture
