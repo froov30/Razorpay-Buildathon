@@ -2,6 +2,18 @@
 
 **Razorpay Buildathon 2026 · Track 4 (AI Finance Controller)**
 
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=flat-square&logo=fastapi&logoColor=white)
+![Streamlit](https://img.shields.io/badge/Streamlit-1.41-FF4B4B?style=flat-square&logo=streamlit&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLite-event%20store-003B57?style=flat-square&logo=sqlite&logoColor=white)
+![Pydantic](https://img.shields.io/badge/Pydantic-2.10-E92063?style=flat-square&logo=pydantic&logoColor=white)
+![pandas](https://img.shields.io/badge/pandas-2.2-150458?style=flat-square&logo=pandas&logoColor=white)
+![pytest](https://img.shields.io/badge/pytest-192%20passing-0A9EDC?style=flat-square&logo=pytest&logoColor=white)
+![Razorpay Route](https://img.shields.io/badge/Razorpay%20Route-test%20mode%20only-3395FF?style=flat-square&logo=razorpay&logoColor=white)
+![Claude](https://img.shields.io/badge/Anthropic%20Claude-contract%20compiler-D97757?style=flat-square&logo=anthropic&logoColor=white)
+![Gemini](https://img.shields.io/badge/Google%20Gemini-scored%20backend-4285F4?style=flat-square&logo=googlegemini&logoColor=white)
+![Data](https://img.shields.io/badge/data-100%25%20synthetic-2DD4BF?style=flat-square)
+
 > **Razorpay Recon proves the money that moved matches the settlement records.
 > EntitleGraph proves the money that moved matches what the contract actually
 > promised.**
@@ -24,6 +36,48 @@ genuinely does not say.
 
 ---
 
+## How a payout is decided
+
+Every arrow that ends in a refusal is a payout that reconciliation would have
+passed. The gate is the only path to money movement — the Razorpay client will
+not execute without a signed token, so "no unsafe action can fire" is enforced
+by construction rather than by policy.
+
+```mermaid
+flowchart LR
+    A["Merchant agreement<br/><i>prose, not config</i>"] --> B{"Contract<br/>compiler"}
+    B -->|term is clear| C["Typed Policy"]
+    B -->|term has no answer| R["<b>null</b> + Ambiguity<br/><i>competing readings kept</i>"]
+
+    C --> D{"Version<br/>resolver"}
+    R --> D
+
+    D -->|one version elected| E["Entitlement computed<br/><i>integer paise, three-way split</i>"]
+    D -->|readings elect<br/>different versions| H1["HOLD<br/>version conflict"]
+
+    E --> F{"Entitlement gate<br/><i>replayed as of the<br/>moment it actually fired</i>"}
+
+    F -->|entitled| G["HMAC approval token<br/><i>single-use, content-bound</i>"]
+    F -->|not entitled| H2["REFUSE<br/><i>amount at risk recorded</i>"]
+
+    G --> T["Razorpay Route transfer<br/>LIVE-TEST · MOCK"]
+    H1 --> Q["Review queue<br/><i>named owner + clause evidence</i>"]
+    H2 --> Q
+
+    T -.-> L[("Hash-chained<br/>append-only audit log")]
+    H1 -.-> L
+    H2 -.-> L
+
+    style F fill:#2a1220,stroke:#fb7185,stroke-width:2px,color:#ffffff
+    style H1 fill:#2a1220,stroke:#fb7185,color:#ffffff
+    style H2 fill:#2a1220,stroke:#fb7185,color:#ffffff
+    style R fill:#2a2410,stroke:#fbbf24,color:#ffffff
+    style L fill:#10241e,stroke:#2dd4bf,color:#ffffff
+    style G fill:#1a1638,stroke:#7c5cff,color:#ffffff
+```
+
+---
+
 ## Quickstart
 
 ```bash
@@ -36,7 +90,7 @@ No API keys needed — everything runs offline in `MOCK` mode and says so loudly
 ```bash
 streamlit run dashboard/app.py     # dashboard (start here for the demo)
 uvicorn src.api.app:app --reload   # API docs at localhost:8000/docs
-python -m pytest -q                # 163 tests, ~5s
+python -m pytest -q                # 192 tests, ~6s
 python -m data.generator           # regenerate synthetic data
 ```
 
@@ -159,7 +213,7 @@ it automatically and being wrong half the time.
 | `src/audit/` | Hash-chained append-only log |
 | `data/generator/` | Synthetic contracts and ledger, ground truth |
 | `dashboard/`, `src/api/` | Streamlit UI, FastAPI |
-| `tests/` | 163 tests: unit, integration, adversarial, evaluation |
+| `tests/` | 192 tests: unit, integration, adversarial, evaluation |
 
 ### Documentation
 
@@ -169,8 +223,7 @@ it automatically and being wrong half the time.
 - [`docs/database.md`](docs/database.md) — schemas and the event model
 - [`docs/test_plan.md`](docs/test_plan.md) — coverage **and known limitations**
 - [`docs/CHANGELOG.md`](docs/CHANGELOG.md) — the failure narrative and every design decision
-- [`DEMO.md`](DEMO.md) — 5-minute pitch script
-- [`BUILD_PROMPT.md`](BUILD_PROMPT.md) — the build specification this was written against
+- [`docs/implementation_plan.md`](docs/implementation_plan.md) — what was built, what was cut, and why
 
 ---
 

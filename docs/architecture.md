@@ -115,6 +115,33 @@ Two ideas make it correct:
 This is what keeps the conflict window finite: three orders held, thirty-seven
 unaffected, from a document that is equally ambiguous throughout.
 
+```mermaid
+flowchart TB
+    A["<b>CTR-0003 v2</b><br/>clause: 'effective from the commencement<br/>of the current billing month'<br/>executed on: 2026-02-12"]
+
+    A --> R1["<b>Reading A</b><br/>effective 2026-02-01"]
+    A --> R2["<b>Reading B</b><br/>effective 2026-02-12"]
+
+    R1 --> W1["Resolve the <i>entire</i><br/>version stack under A"]
+    R2 --> W2["Resolve the <i>entire</i><br/>version stack under B"]
+
+    W1 --> C{"Do both worlds elect<br/>the same version?"}
+    W2 --> C
+
+    C -->|"Jan order: v1 either way<br/>Mar order: v2 either way"| OK["<b>Ambiguity is immaterial</b><br/>settle normally<br/>37 orders"]
+    C -->|"Feb 3 · Feb 6 · Feb 9<br/>v1 (30%) vs v2 (35%)"| NO["<b>Genuinely conflicted</b><br/>HOLD, route to human<br/>3 orders · ₹8,120.98"]
+
+    style A fill:#2a2410,stroke:#fbbf24,color:#ffffff
+    style C fill:#1a1638,stroke:#7c5cff,stroke-width:2px,color:#ffffff
+    style OK fill:#10241e,stroke:#2dd4bf,color:#ffffff
+    style NO fill:#2a1220,stroke:#fb7185,stroke-width:2px,color:#ffffff
+```
+
+The naive alternative — asking "is this order inside any ambiguous window?" —
+flags every order after the amendment forever, because version 1 carries no end
+date. Resolving each reading as a complete world and comparing the *outcomes* is
+what turns an unbounded question into a three-order answer.
+
 ### 2.2a Entitlement Graph — `src/entitlement_graph/graph.py`
 
 The ledger arrives as flat lists — every order, every delivery, every transfer in
@@ -286,7 +313,7 @@ pip install -r requirements.txt
 
 python -m data.generator      # regenerate synthetic data (already committed)
 python -m tests.eval          # scored evaluation report
-python -m pytest -q           # 163 tests
+python -m pytest -q           # 192 tests
 
 streamlit run dashboard/app.py                     # dashboard
 uvicorn src.api.app:app --reload                   # API at :8000/docs

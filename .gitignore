@@ -18,6 +18,23 @@ venv/
 *.sqlite3
 data/synthetic/entitlegraph.db
 
+# Pitch-video production material. The finished video is published unlisted and
+# linked from the submission form; the footage, capture tooling and narration
+# script are not what this repo is being read for.
+video/
+brag-output/
+scripts/
+*.mkv
+*.wav
+*.mp4
+DEMO.md
+DEMO_SCRIPT.md
+
+# Build-process material: kept locally, not published. It documents how the
+# project was specified and planned rather than what was built.
+BUILD_PROMPT.md
+docs/superpowers/
+
 # OS / editor
 .DS_Store
 Thumbs.db

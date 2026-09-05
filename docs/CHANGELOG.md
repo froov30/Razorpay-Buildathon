@@ -127,8 +127,8 @@ reviewer exactly what to ask contracting for. That is the correct outcome.
 
 ## Prompt revision v2
 
-The original build prompt was revised before implementation. Seven changes, each
-marked `[v2]` in `BUILD_PROMPT.md`:
+The original build specification was revised before implementation. Seven
+changes:
 
 1. **Depth over breadth.** Seven parallel phases is a team-sized sprint and
    produces shallow modules. Replaced with: build one contract type end-to-end

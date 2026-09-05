@@ -1,7 +1,7 @@
 # Implementation plan and task checklist
 
-Per `BUILD_PROMPT.md` §4 (v2), the task checklist lives here rather than in a
-separate `tasks.md`. Updated to reflect what was **actually** built.
+The task checklist lives here rather than in a separate `tasks.md`. Updated to
+reflect what was **actually** built.
 
 ---
 
