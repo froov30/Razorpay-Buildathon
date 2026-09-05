@@ -341,7 +341,12 @@ def main() -> int:
         ),
         "unknown",
     )
-    report = build_report(policies, model=model_name, elapsed_s=elapsed)
+    report = build_report(
+        policies,
+        model=model_name,
+        elapsed_s=elapsed,
+        compile_failures=COMPILE_FAILURES,
+    )
     _write_and_print(report, model_name, as_json=args.json)
 
     return (

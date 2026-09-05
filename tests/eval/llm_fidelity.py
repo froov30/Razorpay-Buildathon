@@ -212,12 +212,37 @@ class FidelityReport:
 
 
 def build_report(
-    policies: dict[tuple[str, int], Policy], model: str, elapsed_s: float
+    policies: dict[tuple[str, int], Policy],
+    model: str,
+    elapsed_s: float,
+    compile_failures: dict[tuple[str, int], str] | None = None,
 ) -> FidelityReport:
-    """Score every compiled policy against ground truth."""
+    """Score every compiled policy against ground truth.
+
+    ``compile_failures`` must be passed for the refusal score to be honest. A
+    reply that could not be validated into a policy produces no entry in
+    ``policies``, so without this it silently vanishes from the denominator —
+    and a model that emitted an incoherent split for the one contract it was
+    supposed to refuse would be scored only on the contracts it found easy.
+    Each failure is recorded as a failed refusal result instead.
+    """
     report = FidelityReport(model=model, elapsed_s=elapsed_s)
     for key, policy in sorted(policies.items()):
         if key in INTENDED_TERMS:
             report.field_results.extend(score_policy(policy, INTENDED_TERMS[key]))
         report.refusal_results.append(score_refusal(policy))
+
+    for (contract_id, version), detail in sorted((compile_failures or {}).items()):
+        expectation = (
+            "must_refuse" if contract_id in DELIBERATELY_AMBIGUOUS else "must_not_refuse"
+        )
+        report.refusal_results.append(
+            RefusalResult(
+                contract_id=contract_id,
+                version=version,
+                expectation=expectation,
+                passed=False,
+                detail=f"UNUSABLE REPLY — no valid policy could be built: {detail[:180]}",
+            )
+        )
     return report
