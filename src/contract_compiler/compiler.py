@@ -45,6 +45,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Protocol
 
+from src.common import config
 from src.common.types import ContractSource
 from src.contract_compiler.dsl import (
     Ambiguity,
@@ -453,7 +454,9 @@ class LLMBackend:
     name = "llm"
 
     def __init__(self, model: str | None = None, api_key: str | None = None) -> None:
-        self.model = model or os.getenv("ENTITLEGRAPH_LLM_MODEL", "claude-sonnet-5")
+        self.model = model or os.getenv("ENTITLEGRAPH_LLM_MODEL") or config.get(
+            "models", "backends", "claude", "model", default="claude-sonnet-5"
+        )
         self._api_key = api_key or os.getenv("ANTHROPIC_API_KEY", "")
         if not self._api_key:
             raise RuntimeError("LLMBackend requires ANTHROPIC_API_KEY")
@@ -571,11 +574,11 @@ class NvidiaNimBackend:
     ) -> None:
         # Pinned exactly, for the same reason as the other backends: an alias
         # would silently change which model produced a cached policy.
-        self.model = model or os.getenv(
-            "ENTITLEGRAPH_NIM_MODEL", "meta/llama-3.3-70b-instruct"
+        self.model = model or os.getenv("ENTITLEGRAPH_NIM_MODEL") or config.get(
+            "models", "backends", "nim", "model", default="moonshotai/kimi-k3"
         )
-        self.base_url = base_url or os.getenv(
-            "ENTITLEGRAPH_NIM_BASE_URL", self.DEFAULT_BASE_URL
+        self.base_url = base_url or os.getenv("ENTITLEGRAPH_NIM_BASE_URL") or config.get(
+            "models", "backends", "nim", "base_url", default=self.DEFAULT_BASE_URL
         )
         self._api_key = (
             api_key
@@ -682,7 +685,9 @@ class GeminiBackend:
         # An alias silently changes which model produced a cached policy, which
         # would break the reproducibility guarantee the compile cache exists to
         # provide. Update this deliberately, and re-score when you do.
-        self.model = model or os.getenv("ENTITLEGRAPH_GEMINI_MODEL", "gemini-3.5-flash")
+        self.model = model or os.getenv("ENTITLEGRAPH_GEMINI_MODEL") or config.get(
+            "models", "backends", "gemini", "model", default="gemini-3.5-flash"
+        )
         self._api_key = (
             api_key
             or os.getenv("GEMINI_API_KEY")

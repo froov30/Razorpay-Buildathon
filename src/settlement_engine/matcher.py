@@ -24,6 +24,7 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from dataclasses import replace
 
+from src.common import config
 from src.common.money import apply_bps, format_inr
 from src.common.types import (
     ConfidenceTier,
@@ -360,8 +361,8 @@ def _rank(
 # implying 35.03% points at something else entirely — a fee, an adjustment, a
 # partial claw-back — and calling that a "rate mismatch" would hand the reviewer
 # a confident, wrong root cause. Better to fall through to "unexplained".
-_RATE_QUANTUM_BPS = 25
-_RATE_TOLERANCE_BPS = 1
+_RATE_QUANTUM_BPS = config.get("engine", "matcher", "rate_quantum_bps", default=25)
+_RATE_TOLERANCE_BPS = config.get("engine", "matcher", "rate_tolerance_bps", default=1)
 
 
 def _is_quotable_rate(implied_bps: int) -> bool:

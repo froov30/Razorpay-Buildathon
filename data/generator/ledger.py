@@ -36,6 +36,7 @@ from pathlib import Path
 from typing import Any
 
 from data.generator.contracts import INTENDED_TERMS, build_contract_sources
+from src.common import config
 from src.common.money import apply_bps
 from src.common.types import (
     ContractSource,
@@ -50,7 +51,7 @@ from src.common.types import (
     Transfer,
 )
 
-SEED = 20260904
+SEED = config.get("evaluation", "dataset", "seed", default=20260904)
 BATCH_AS_OF = datetime(2026, 3, 15, tzinfo=timezone.utc)
 DEFAULT_OUTPUT_DIR = Path("data/synthetic")
 

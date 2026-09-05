@@ -54,6 +54,7 @@ from src.common.types import (
 from src.contract_compiler.compiler import ContractCompiler
 from src.contract_compiler.dsl import Policy
 from src.contract_compiler.resolver import Resolution, group_by_contract, resolve
+from src.entitlement_graph.graph import EntitlementGraph
 from src.razorpay_client.client import RazorpayRouteClient, TransferProposal
 from src.settlement_engine.compute import OrderContext, compute_entitlements
 from src.settlement_engine.gate import EntitlementGate, GateVerdict
@@ -229,6 +230,8 @@ class RunResult:
     audit_message: str = ""
     razorpay_mode: str = ""
     razorpay_banner: str = ""
+    graph: EntitlementGraph | None = None
+    """Per-order event views, retained so callers can show a timeline."""
 
     @property
     def decisions(self) -> list[EntitlementDecision]:
@@ -305,20 +308,9 @@ def run(
     by_contract = group_by_contract(policies)
     contract_for_seller = {p.seller_id: p.contract_id for p in policies}
 
-    # -- index the ledger by order ----------------------------------------
-    promo_by_order = {p.order_id: p for p in ds.promotions}
-    deliveries_by_order: dict[str, list[DeliveryEvent]] = {}
-    for d in ds.deliveries:
-        deliveries_by_order.setdefault(d.order_id, []).append(d)
-    refunds_by_order: dict[str, list[RefundEvent]] = {}
-    for r in ds.refunds:
-        refunds_by_order.setdefault(r.order_id, []).append(r)
-    transfers_by_order: dict[str, list[Transfer]] = {}
-    for t in ds.transfers:
-        transfers_by_order.setdefault(t.order_id, []).append(t)
-    reversals_by_order: dict[str, list[ReversalEvent]] = {}
-    for r in ds.reversals:
-        reversals_by_order.setdefault(r.order_id, []).append(r)
+    # -- fold the flat ledger into per-order event views -------------------
+    graph = EntitlementGraph.from_dataset(ds)
+    result.graph = graph
 
     # -- per-order processing ---------------------------------------------
     for order in ds.orders:
@@ -326,10 +318,8 @@ def run(
         versions = by_contract.get(contract_id, [])
         resolution = resolve(versions, order.placed_at, contract_id=contract_id)
 
-        order_transfers = transfers_by_order.get(order.order_id, [])
-        seller_transfer = next(
-            (t for t in order_transfers if t.party_role == PartyRole.SELLER), None
-        )
+        order_transfers = graph.transfers_for(order.order_id)
+        seller_transfer = graph.seller_transfer(order.order_id)
 
         if not resolution.is_resolved:
             decision = unresolved_decision(order.order_id, resolution, order_transfers)
@@ -347,34 +337,25 @@ def run(
         policy = resolution.policy
         assert policy is not None
 
-        ctx = OrderContext(
-            order=order,
-            policy=policy,
-            promotion=promo_by_order.get(order.order_id),
-            deliveries=deliveries_by_order.get(order.order_id, []),
-            refunds=refunds_by_order.get(order.order_id, []),
-            as_of=None,  # matcher evaluates "now"; gate replays at fire time
-        )
+        # as_of=None: the matcher evaluates "now"; the gate replays at fire time
+        ctx = graph.context_for(order, policy)
 
         computation = compute_entitlements(ctx)
         decision = match(
-            ctx, computation, order_transfers, reversals_by_order.get(order.order_id, [])
+            ctx, computation, order_transfers, graph.reversals_for(order.order_id)
         )
 
         # Replay the seller payout through the gate, as of when it fired.
+        # `refunds_before` keeps hindsight out of the historical decision: a
+        # refund issued after the payout had not happened when the gate would
+        # have been asked.
         verdict = None
         if seller_transfer is not None:
-            replay_ctx = OrderContext(
-                order=ctx.order,
-                policy=ctx.policy,
-                promotion=ctx.promotion,
-                deliveries=ctx.deliveries,
-                refunds=[
-                    r
-                    for r in ctx.refunds
-                    if r.issued_at <= seller_transfer.executed_at
-                ],
+            replay_ctx = graph.context_for(
+                order,
+                policy,
                 as_of=seller_transfer.executed_at,
+                refunds_before=seller_transfer.executed_at,
             )
             verdict = gate.submit(
                 _proposal(order, seller_transfer), replay_ctx, resolution

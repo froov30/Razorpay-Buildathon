@@ -21,8 +21,10 @@ requests==2.32.3
 anthropic==0.42.0
 google-genai==2.22.0
 
-# Config
+# Config — configs/*.yaml is authoritative for thresholds,
+# model ids and dataset paths; src/ reads, never hardcodes.
 python-dotenv==1.0.1
+PyYAML==6.0.1
 
 # Tests
 pytest==8.3.4

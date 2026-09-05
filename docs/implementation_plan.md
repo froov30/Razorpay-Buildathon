@@ -55,7 +55,7 @@ Cut order when time is short (cut from the bottom, never the top):
 - [x] `entitled_now` distinguishing *owed* from *owed yet*
 - [x] `matcher.py` — 8 root causes, severity-ranked, tiered
 - [x] `gate.py` — maker-checker, single-use content-bound tokens
-- [x] `audit/log.py` — hash-chained, trigger-enforced append-only
+- [x] `src/audit/log.py` — hash-chained, trigger-enforced append-only
 - [x] `pipeline.py` — orchestration, gate replay at historical fire time
 
 ## Phase 4 — Synthetic data ✅

@@ -1,0 +1,24 @@
+# Settlement engine thresholds.
+#
+# These are commercial judgement calls, not implementation details, and they
+# belong where a finance controller can read and change them without opening
+# Python. Every value here was previously a module-level constant in src/.
+
+matcher:
+  # Commercial commission rates are quoted in quarter-percent steps. A settled
+  # amount implying 35.00% points at a real (if wrong) contractual rate; one
+  # implying 35.03% points at something else — a fee, an adjustment, a partial
+  # claw-back. Calling that a "rate mismatch" would hand a reviewer a
+  # confident, wrong root cause, so anything off-quantum falls through to
+  # "unexplained, escalated rather than guessed".
+  rate_quantum_bps: 25
+  rate_tolerance_bps: 1
+
+settlement:
+  # Half-up, applied once at the point a rate is applied. What matters for
+  # correctness is not which convention but that one convention is applied
+  # consistently on both sides of every comparison.
+  rounding: half_up
+  # Delivery fees are NOT prorated on refund: the courier delivered, and a
+  # customer return does not retroactively un-perform that service.
+  prorate_delivery_fee_on_refund: false

@@ -94,15 +94,36 @@ Python 3.11+, FastAPI (API layer), Streamlit (dashboard), SQLite (event store). 
 heavyweight infra — no Kafka, no Postgres server, no Docker cluster. Must run with a
 single setup command on a judge's laptop.
 
-### Buildathon submission requirements (confirmed)
+### Buildathon submission requirements
 
-Submission must include: (1) a public GitHub repository, (2) a 5-minute pitch video,
-(3) an architecture diagram, and (4) an explicit explanation of what broke during
-development and how you recovered. Track 4's judging bar is throughput across a batch
-of synthetic records, measured accuracy, and an honest exception list.
+**`[v3]` Corrected against the live site on 2026-09-05.** The earlier text in this
+file claimed an architecture diagram was a required deliverable. It is not. The
+application form asks for exactly 12 things; of those, six concern the build:
 
-You produce everything for (1), (3), and (4) plus a demo script. You cannot record
-video — leave a clearly marked placeholder in `DEMO.md`.
+1. Your track
+2. Project name
+3. What it solves
+4. **GitHub repo URL, public**
+5. **5-minute pitch video** (unlisted is fine)
+6. **What broke, and how you got out** — the site says *"the last one is the one
+   we read first"*
+
+Track 04 (AI Finance Controller) brief, verbatim:
+
+> *"Build an agent that closes one finance-ops loop across a **50+ record batch**
+> of synthetic data, reporting its **match rate** and the **exceptions it could
+> not resolve**."*
+>
+> **THE BAR:** *"Throughput plus measured accuracy plus an honest exception list.
+> One cherry-picked match proves nothing."*
+
+Judging is on four criteria: **problem taste**, **build quality** ("does it run,
+is it structured, would you trust it"), **AI judgment** ("the right tool in the
+right place, *and where you chose not to use one*"), and **failure recovery**.
+
+The diagram is kept anyway — it costs nothing and serves build quality — but it
+is over-delivery, not compliance. You cannot record video; leave a clearly marked
+placeholder in `DEMO.md`.
 
 ### The required "what broke" narrative
 
@@ -159,6 +180,10 @@ Razorpay-Buildathon/
 ├── README.md
 ├── BUILD_PROMPT.md              # this file
 ├── DEMO.md
+├── configs/                     # [v3] thresholds, model ids, gates (YAML)
+│   ├── engine.yaml
+│   ├── models.yaml
+│   └── evaluation.yaml
 ├── docs/
 │   ├── prd.md
 │   ├── TRD.md
@@ -173,7 +198,7 @@ Razorpay-Buildathon/
 ├── src/
 │   ├── common/                  # money arithmetic, shared types
 │   ├── contract_compiler/       # LLM clause extraction -> Policy DSL  [CENTERPIECE]
-│   ├── entitlement_graph/       # event-sourced entitlement model
+│   ├── entitlement_graph/       # per-order event views (graph.py)
 │   ├── settlement_engine/       # deterministic computation + matching
 │   ├── exception_investigator/  # root-cause classification + explanations
 │   ├── razorpay_client/         # test-mode Route wrapper (LIVE/MOCK)

@@ -115,6 +115,25 @@ Two ideas make it correct:
 This is what keeps the conflict window finite: three orders held, thirty-seven
 unaffected, from a document that is equally ambiguous throughout.
 
+### 2.2a Entitlement Graph — `src/entitlement_graph/graph.py`
+
+The ledger arrives as flat lists — every order, every delivery, every transfer in
+separate collections. This module owns the join, folding them into a per-order
+view.
+
+An order is not a row. It is a small event-sourced object: placed, captured,
+possibly discounted, possibly delivered, possibly settled, possibly refunded,
+possibly reversed. Entitlement is a fold over that sequence, and the fold is
+**order-dependent** — a payout before a delivery confirmation means something
+different from the same payout after it. `timeline_for()` exposes that ordering
+directly, which is what makes an exception explainable rather than merely
+detected: a totals view cannot express "this fired too early."
+
+`context_for()` also takes `refunds_before`, used by the gate's replay. When
+re-asking whether a payout should have fired at time T, refunds issued after T
+had not happened yet and must be excluded, or hindsight leaks into a historical
+decision.
+
 ### 2.3 Settlement Computation — `compute.py`
 
 A pure function of `(order, events, policy)`. No I/O, no clock reads except the
@@ -153,6 +172,34 @@ chain is verified before any safety metric is reported — "zero unsafe actions"
 means nothing if the log could have been edited afterwards.
 
 ---
+
+### 2.7 Configuration — `configs/` and `src/common/config.py`
+
+**`src/` is never edited to run a different experiment.** Thresholds, pinned model
+ids, dataset paths and pass/fail gates live in three YAML files; code reads them.
+
+| File | Owns |
+|---|---|
+| `configs/engine.yaml` | Matcher quantum/tolerance, rounding, proration rules |
+| `configs/models.yaml` | Backend registry, pinned model ids, rate limits, key env names |
+| `configs/evaluation.yaml` | Seed, batch clock, paths, and the gates the eval must clear |
+
+The rule was learned rather than imported. Swapping contract-compiler models
+during development meant editing `compiler.py` once per model, mixing a
+configuration choice into source history each time; and the parameters were
+scattered — a rounding quantum in the matcher, a rate limit in the eval runner, a
+seed in the generator — so nobody could see the system's actual settings without
+grepping for constants.
+
+Model ids are **pinned exactly, never aliased**. `gemini-flash-latest` would
+silently change which model produced a cached policy and break the reproducibility
+guarantee the compile cache exists to provide. A test asserts no config value
+contains `latest`.
+
+Deliberately **not Hydra**: composition, CLI overrides and output-directory
+conventions are more machinery than three flat files need. Defaults are embedded
+in `config.py`, so a deleted or malformed YAML falls back wholesale rather than
+silently disabling a safety gate or applying half a file.
 
 ## 3. Data flow, one order
 

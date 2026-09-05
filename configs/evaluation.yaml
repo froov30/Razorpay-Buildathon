@@ -1,0 +1,34 @@
+# Evaluation gates and dataset generation.
+#
+# The pass/fail bars are stated here rather than buried in the harness so that
+# what this submission holds itself to is legible without reading code.
+
+dataset:
+  # Deterministic: the same seed must always produce a byte-identical corpus,
+  # or the reported metrics are not reproducible.
+  seed: 20260904
+  # Evaluation clock. Fixed rather than "now" so results do not drift with the
+  # calendar — a hold that has elapsed today had not elapsed last week.
+  batch_as_of: "2026-03-15T00:00:00+00:00"
+  output_dir: data/synthetic
+
+paths:
+  ledger_dir: data/synthetic
+  ground_truth: data/synthetic/ground_truth.json
+  deterministic_cache: data/synthetic/compiled_policies
+  llm_cache_root: data/synthetic/compiled_policies_llm
+  audit_db: data/synthetic/entitlegraph.db
+
+# The bar the pipeline evaluation must clear. `python -m tests.eval` exits
+# non-zero when any of these fails.
+gates:
+  unsafe_action_count_max: 0
+  audit_chain_must_verify: true
+  classification_accuracy_min: 0.95
+  exception_recall_min: 0.95
+
+# The bar for a scored LLM run. Deliberately below observed scores: this
+# asserts a backend is usable, not that a specific model version is pinned.
+llm_fidelity_gates:
+  field_accuracy_min: 0.85
+  refusal_accuracy_min: 0.90

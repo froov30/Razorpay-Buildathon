@@ -1,0 +1,52 @@
+# Contract-compiler backends.
+#
+# Model ids are pinned exactly, never to an alias like `gemini-flash-latest`.
+# An alias silently changes which model produced a cached policy, which breaks
+# the reproducibility guarantee the compile cache exists to provide. Change a
+# pin deliberately, then re-score.
+#
+# This file is the reason src/ no longer needs editing to run a different
+# experiment. Every model swap during development was previously a code change.
+
+default_backend: deterministic
+
+backends:
+  deterministic:
+    # Rule-based parser over the synthetic corpus. Hermetic, no API key, and
+    # the backend the committed headline metrics are produced from.
+    kind: deterministic
+
+  claude:
+    kind: anthropic
+    model: claude-sonnet-5
+    max_tokens: 2048
+    api_key_env: ANTHROPIC_API_KEY
+
+  gemini:
+    kind: google
+    model: gemini-3.5-flash
+    # Generous because these models reason before answering and the reasoning
+    # is charged against this budget. At 2048 the reasoning consumed the whole
+    # allowance and the JSON arrived truncated mid-string.
+    max_output_tokens: 16384
+    # Clause extraction is a reading task with a fixed output schema, not a
+    # reasoning task. Disabled where the model permits it; some reject 0 and
+    # fall back automatically.
+    thinking_budget: 0
+    api_key_env: [GEMINI_API_KEY, GOOGLE_API_KEY]
+    # Free tier allows 5 requests/minute. Pacing under it is cheaper than
+    # discovering the limit by hitting it.
+    min_request_interval_s: 13.0
+
+  nim:
+    kind: openai_compatible
+    model: moonshotai/kimi-k3
+    base_url: https://integrate.api.nvidia.com/v1
+    max_tokens: 4096
+    api_key_env: [NVIDIA_NIM_API_KEY, NVIDIA_API_KEY]
+    # Latency rather than rate limiting is the constraint here (~110s/call).
+    min_request_interval_s: 0.0
+
+# Auto-selection order when no backend is named explicitly. Fixed, because an
+# unstable default would silently change which model produced a cached policy.
+auto_select_order: [claude, gemini, nim, deterministic]

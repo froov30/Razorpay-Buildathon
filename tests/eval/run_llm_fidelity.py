@@ -25,6 +25,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from data.generator.contracts import build_contract_sources  # noqa: E402
+from src.common import config
 from src.common.console import rule, setup_console  # noqa: E402
 from src.contract_compiler.compiler import (  # noqa: E402
     ContractCompiler,
@@ -47,8 +48,8 @@ DEFAULT_LLM_CACHE_DIR = Path("data/synthetic/compiled_policies_llm")
 RESULTS_DIR = Path("data/synthetic")
 RESULTS_PATH = RESULTS_DIR / "llm_fidelity_report.json"
 
-FIELD_ACCURACY_BAR = 0.85
-REFUSAL_ACCURACY_BAR = 0.90
+FIELD_ACCURACY_BAR = config.get("evaluation", "llm_fidelity_gates", "field_accuracy_min", default=0.85)
+REFUSAL_ACCURACY_BAR = config.get("evaluation", "llm_fidelity_gates", "refusal_accuracy_min", default=0.90)
 
 
 BACKENDS = {"claude": LLMBackend, "gemini": GeminiBackend, "nim": NvidiaNimBackend}
@@ -91,7 +92,9 @@ def resolve_backend(name: str | None = None):
 # under that is cheaper than discovering the limit by hitting it: every 429
 # costs a wasted request and a ~37s forced wait, and a scored run that trips the
 # limit repeatedly measures Google's rate limiter rather than the model.
-FREE_TIER_MIN_INTERVAL_S = 13.0
+FREE_TIER_MIN_INTERVAL_S = config.get(
+    "models", "backends", "gemini", "min_request_interval_s", default=13.0
+)
 
 
 def model_cache_dir(base: Path | str, model_id: str) -> Path:

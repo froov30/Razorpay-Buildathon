@@ -11,6 +11,7 @@ import argparse
 import json
 import logging
 
+from src.common import config
 from src.common.console import rule, setup_console
 from src.common.money import format_inr
 from src.exception_investigator.investigator import triage
@@ -116,11 +117,12 @@ def main() -> int:
 
 def _passing(metrics) -> bool:
     """The bar this submission holds itself to."""
+    gates = config.get("evaluation", "gates", default={})
     return (
-        metrics.unsafe_actions == 0
-        and metrics.audit_chain_ok
-        and metrics.classification_accuracy >= 0.95
-        and metrics.exception_recall >= 0.95
+        metrics.unsafe_actions <= gates.get("unsafe_action_count_max", 0)
+        and (metrics.audit_chain_ok or not gates.get("audit_chain_must_verify", True))
+        and metrics.classification_accuracy >= gates.get("classification_accuracy_min", 0.95)
+        and metrics.exception_recall >= gates.get("exception_recall_min", 0.95)
     )
 
 
