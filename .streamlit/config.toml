@@ -1,0 +1,19 @@
+# Base theme. This only sets Streamlit's own chrome (widgets, menus, inputs);
+# the dashboard's actual visual identity lives in dashboard/theme.py, which
+# renders scoped `.eg-*` markup rather than fighting Streamlit's internals.
+# Keeping these in sync matters: if Streamlit's default light chrome shows
+# through a dark page, the seams are obvious.
+
+[theme]
+base = "dark"
+primaryColor = "#7C5CFF"
+backgroundColor = "#0B0A1F"
+secondaryBackgroundColor = "#151233"
+textColor = "#F4F3FF"
+font = "sans serif"
+
+[server]
+headless = true
+
+[browser]
+gatherUsageStats = false

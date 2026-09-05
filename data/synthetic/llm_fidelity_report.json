@@ -1,0 +1,73 @@
+{
+  "model": "gemini-3.1-flash-lite",
+  "elapsed_s": 219.02,
+  "field_accuracy": 1.0,
+  "correct_fields": 100,
+  "total_fields": 100,
+  "perfect_contracts": 10,
+  "scored_contracts": 10,
+  "refusal_accuracy": 0.9,
+  "refusals": [
+    {
+      "contract": "CTR-0001 v1",
+      "expectation": "must_not_refuse",
+      "passed": true,
+      "detail": "correctly readable"
+    },
+    {
+      "contract": "CTR-0002 v1",
+      "expectation": "must_not_refuse",
+      "passed": true,
+      "detail": "correctly readable"
+    },
+    {
+      "contract": "CTR-0003 v1",
+      "expectation": "must_not_refuse",
+      "passed": true,
+      "detail": "correctly readable"
+    },
+    {
+      "contract": "CTR-0003 v2",
+      "expectation": "must_flag_date_ambiguity",
+      "passed": false,
+      "detail": "flagged with candidates ['2026-02-01']"
+    },
+    {
+      "contract": "CTR-0004 v1",
+      "expectation": "must_not_refuse",
+      "passed": true,
+      "detail": "correctly readable"
+    },
+    {
+      "contract": "CTR-0005 v1",
+      "expectation": "must_not_refuse",
+      "passed": true,
+      "detail": "correctly readable"
+    },
+    {
+      "contract": "CTR-0006 v1",
+      "expectation": "must_not_refuse",
+      "passed": true,
+      "detail": "correctly readable"
+    },
+    {
+      "contract": "CTR-0008 v1",
+      "expectation": "must_not_refuse",
+      "passed": true,
+      "detail": "correctly readable"
+    },
+    {
+      "contract": "CTR-0009 v1",
+      "expectation": "must_not_refuse",
+      "passed": true,
+      "detail": "correctly readable"
+    },
+    {
+      "contract": "CTR-0010 v1",
+      "expectation": "must_not_refuse",
+      "passed": true,
+      "detail": "correctly readable"
+    }
+  ],
+  "field_failures": []
+}
